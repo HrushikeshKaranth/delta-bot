@@ -1,0 +1,9 @@
+step 1 -	first entry -> short straddle with calender
+
+step 2 -	if price [goes up] form straddle then [sell put] of [above] strike and if the price [comes back] exit the [sold put]
+
+step 3 -	if price [goes down] form straddle then [sell call] of [below] strike and if the price [comes back] exit the [sold put]
+
+adjustments
+
+- If the price keeps on going the we keep on selling in that direction and if the price reverses the we keep on exiting the sold contracts
