@@ -1,13 +1,13 @@
 // import React, { useState } from 'react'
 
 import { useEffect, useRef, useState } from "react";
-import { Stack } from "../Helpers/HelperFunctions";
+import { Stack } from "../Helpers/Stack";
+import React, { useContext } from 'react'
+import { GlobalContext } from '../Context/GlobalState';
 
-function StrategyOne(props) {
-  let btc = props.bitcoin;
-  let strike = props.btcStrike;
-  const [ceCount, setCeCount] = useState(0);
-  const [peCount, setPeCount] = useState(0);
+function StrategyOne() {
+  const { btc_mark_price, btc_current_strike } = useContext(GlobalContext);
+
   let [count, setCount] = useState(0);
   const [entryStrike, setEntryStrike] = useState(0);
   const [upStrike, setUpStrike] = useState(0);
@@ -27,14 +27,14 @@ function StrategyOne(props) {
   // console.log(oneStrikeDown, currentStrike, oneStrikeUp);
 
   function trade() {
-    setEntryStrike(strike.current);
-    setDownStrike(strike.current - 200);
-    setUpStrike(strike.current + 200);
-    console.log("Start price - " + btc);
-    console.log("Sold - " + strike.current + " CE and PE");
+    setEntryStrike(btc_current_strike);
+    setDownStrike(btc_current_strike - 200);
+    setUpStrike(btc_current_strike + 200);
+    console.log("Start price - " + btc_mark_price);
+    console.log("Sold - " + btc_current_strike + " CE and PE");
     setIsTradePlaced(true)
     startTrading();
-    // entries.push(strike.current+" CE");
+    // entries.push(btc_current_strike+" CE");
     // console.log(entries.items);
   }
 
@@ -45,43 +45,43 @@ function StrategyOne(props) {
     console.log(upStrike);
     console.log(downStrike);
 
-    if (btc >= upStrike && upStrike > entryStrike) {
+    if (btc_mark_price >= upStrike && upStrike > entryStrike) {
       console.log(entryStrike);
       console.log(upStrike);
       console.log(downStrike);
       entries.push(upStrike);
-      setUpStrike(strike.current + 200);
-      setDownStrike(strike.current - 200);
+      setUpStrike(btc_current_strike + 200);
+      setDownStrike(btc_current_strike - 200);
       console.log("Sold - " + upStrike + " PE");
       // setPeCount(peCount = peCount + 1);
     }
-    if (btc <= downStrike && downStrike >= entryStrike) {
+    if (btc_mark_price <= downStrike && downStrike >= entryStrike) {
       console.log(entryStrike);
       console.log(upStrike);
       console.log(downStrike);
       let exit = entries.pop();
-      setDownStrike(strike.current - 200);
-      setUpStrike(strike.current + 200);
+      setDownStrike(btc_current_strike - 200);
+      setUpStrike(btc_current_strike + 200);
       console.log("Exited - " + exit + " CE");
     }
 
     // downside
-    if (btc <= downStrike && downStrike < entryStrike) {
+    if (btc_mark_price <= downStrike && downStrike < entryStrike) {
       console.log(entryStrike);
       console.log(upStrike);
       console.log(downStrike);
       entries.push(upStrike);
-      setDownStrike(strike.current - 200);
-      setUpStrike(strike.current + 200);
+      setDownStrike(btc_current_strike - 200);
+      setUpStrike(btc_current_strike + 200);
       console.log("Sold - " + downStrike + " PE");
     }
-    if (btc >= upStrike && upStrike <= entryStrike) {
+    if (btc_mark_price >= upStrike && upStrike <= entryStrike) {
       console.log(entryStrike);
       console.log(upStrike);
       console.log(downStrike);
       let exit = entries.pop();
-      setUpStrike(strike.current + 200);
-      setDownStrike(strike.current - 200);
+      setUpStrike(btc_current_strike + 200);
+      setDownStrike(btc_current_strike - 200);
       console.log("Exited - " + exit + " CE");
       // setPeCount(peCount = peCount + 1);
     }
@@ -90,44 +90,44 @@ function StrategyOne(props) {
 
   useEffect(() => {
     if (isTradePlaced) {
-      if (btc >= upStrike && upStrike > entryStrike) {
+      if (btc_mark_price >= upStrike && upStrike > entryStrike) {
         console.log(entryStrike);
         console.log(upStrike);
         console.log(downStrike);
         entries.push(upStrike);
         console.log("Sold - " + upStrike + " PE");
-        setUpStrike(strike.current + 200);
-        setDownStrike(strike.current - 200);
+        setUpStrike(btc_current_strike + 200);
+        setDownStrike(btc_current_strike - 200);
         // setPeCount(peCount = peCount + 1);
       }
-      if (btc <= downStrike && downStrike >= entryStrike) {
+      if (btc_mark_price <= downStrike && downStrike >= entryStrike) {
         console.log(entryStrike);
         console.log(upStrike);
         console.log(downStrike);
         let exit = entries.pop();
         console.log("Exited - " + exit + " CE");
-        setDownStrike(strike.current - 200);
-        setUpStrike(strike.current + 200);
+        setDownStrike(btc_current_strike - 200);
+        setUpStrike(btc_current_strike + 200);
       }
 
       // downside
-      if (btc <= downStrike && downStrike < entryStrike) {
+      if (btc_mark_price <= downStrike && downStrike < entryStrike) {
         console.log(entryStrike);
         console.log(upStrike);
         console.log(downStrike);
         entries.push(downStrike);
         console.log("Sold - " + downStrike + " PE");
-        setDownStrike(strike.current - 200);
-        setUpStrike(strike.current + 200);
+        setDownStrike(btc_current_strike - 200);
+        setUpStrike(btc_current_strike + 200);
       }
-      if (btc >= upStrike && upStrike <= entryStrike) {
+      if (btc_mark_price >= upStrike && upStrike <= entryStrike) {
         console.log(entryStrike);
         console.log(upStrike);
         console.log(downStrike);
         let exit = entries.pop();
         console.log("Exited - " + exit + " CE");
-        setUpStrike(strike.current + 200);
-        setDownStrike(strike.current - 200);
+        setUpStrike(btc_current_strike + 200);
+        setDownStrike(btc_current_strike - 200);
         // setPeCount(peCount = peCount + 1);
       }
       console.log("Monitoring...");
@@ -150,8 +150,8 @@ function StrategyOne(props) {
   return (
     <div className='section2'>
       <div>
-        <div>Market Price - {props.bitcoin}</div>
-        {/* <div>Current Strike - {props.btcStrike.current}</div>
+        <div>Market Price - {btc_mark_price}</div>
+        {/* <div>Current Strike - {props.btcbtc_current_strike}</div>
         <div>Up Strike - {props.btcStrike.up}</div>
         <div>Down Strike - {props.btcStrike.down}</div> */}
       </div>

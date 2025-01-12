@@ -39,10 +39,10 @@ export function getHeaders(payload){
     // const payload = ''
     const method = 'GET'
     const path = '/v2/orders'
-    const query_string = ''
+    // const query_string = ''
     // timestamp in epoch unix format
     const timestamp = Date.now() / 1000 | 0
-    const signature_data = method + timestamp + path + query_string + JSON.stringify(payload);
+    // const signature_data = method + timestamp + path + query_string + JSON.stringify(payload);
     const signature = generateSignature(method, path, JSON.stringify(payload))   
     console.log(signature);
     console.log();
@@ -105,7 +105,7 @@ export async function getProductId(symbol){
     let btcStrike = '95000'
     let api_key = "MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA"
     let api_secret = "QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY"
-    let symbol = 'C-BTC-'+btcStrike.up+'-130125'
+    let symbol = 'C-BTC-'+btcStrike+'-130125'
     let payload  = {
       "product_id": await getProductId(symbol),
       "size": 10,
@@ -136,50 +136,3 @@ export async function getProductId(symbol){
     .catch((err)=>{console.log(err);})
 
   }
-
-// Implementation of stack data structure
-export class Stack {
-    // Array is used to implement stack
-    constructor() {
-        this.items = [];
-    }
-
-    // Stack functions
-    // Push function
-    push(element) {
-        // push element into the items
-        this.items.push(element);
-    }
-
-    // pop function
-    pop() {
-        // return top most element in the stack
-        // and removes it from the stack
-        // Underflow if stack is empty
-        if (this.items.length == 0)
-            return 'Underflow'
-        return this.items.pop();
-    }
-
-    // peek function
-    peek() {
-        // return the top most element from the stack
-        // but does'nt delete it.
-        return this.items[this.items.length - 1];
-    }
-
-    // isEmpty function
-    isEmpty() {
-        // return true if stack is empty
-        return this.items.length == 0;
-    }
-
-    // printStack function
-    print() {
-        // let str = "";
-        for (let i = 0; i < this.items.length; i++)
-            console.log(this.items[i]);
-            // str += this.items[i] + " ";
-        // return str;
-    }
-}
