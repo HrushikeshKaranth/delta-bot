@@ -7,3 +7,16 @@ step 3 -	if price [goes down] form straddle then [sell call] of [below] strike a
 adjustments
 
 - If the price keeps on going the we keep on selling in that direction and if the price reverses the we keep on exiting the sold contracts
+_____________________________________
+
+
+entryStrike - holds initial entry strike [straddle]
+tradedStrike- holds currently sold strike
+we update upStrike and downStrike on every entry we take
+stack - to hold entries [latest entries will be exited first if price reverses]
+stack.poll - will hold the latest entry
+price goes up one strike we sell put
+price goes down one strike we sell call
+
+if price reverses down from strike we exit sold put
+if price reverses up from strike we exit sold call

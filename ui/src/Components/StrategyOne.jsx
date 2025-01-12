@@ -1,6 +1,6 @@
 // import React, { useState } from 'react'
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Stack } from "../Helpers/HelperFunctions";
 
 function StrategyOne(props) {
@@ -8,11 +8,16 @@ function StrategyOne(props) {
   let strike = props.btcStrike;
   const [ceCount, setCeCount] = useState(0);
   const [peCount, setPeCount] = useState(0);
+  let [count, setCount] = useState(0);
   const [entryStrike, setEntryStrike] = useState(0);
   const [upStrike, setUpStrike] = useState(0);
   const [downStrike, setDownStrike] = useState(0);
   const intervalId = useRef();
-  const[entries, setEntries] = useState(new Stack());
+  const [entries, setEntries] = useState(new Stack());
+  const [isTradePlaced, setIsTradePlaced] = useState(false)
+
+
+  // console.log(count);
   // let entries = new Stack(); // stack to keep track of entries
   // let strikeDistance = 200
   // let currentStrike = (Math.round(btc / strikeDistance) * strikeDistance)
@@ -21,46 +26,125 @@ function StrategyOne(props) {
 
   // console.log(oneStrikeDown, currentStrike, oneStrikeUp);
 
-  async function trade() {
+  function trade() {
     setEntryStrike(strike.current);
     setDownStrike(strike.current - 200);
     setUpStrike(strike.current + 200);
     console.log("Start price - " + btc);
     console.log("Sold - " + strike.current + " CE and PE");
-    entries.push(strike.current+" CE");
-    console.log(entries.items);
+    setIsTradePlaced(true)
+    startTrading();
+    // entries.push(strike.current+" CE");
+    // console.log(entries.items);
   }
 
   // Function containing Trading Logic
-  function monitor() {
-    if (btc >= upStrike) {
+  function monitorTrades() {
+    //upside
+    console.log(entryStrike);
+    console.log(upStrike);
+    console.log(downStrike);
+
+    if (btc >= upStrike && upStrike > entryStrike) {
+      console.log(entryStrike);
+      console.log(upStrike);
+      console.log(downStrike);
       entries.push(upStrike);
       setUpStrike(strike.current + 200);
+      setDownStrike(strike.current - 200);
       console.log("Sold - " + upStrike + " PE");
       // setPeCount(peCount = peCount + 1);
     }
-    if (btc <= downStrike) {
-      entries.push(downStrike);
+    if (btc <= downStrike && downStrike >= entryStrike) {
+      console.log(entryStrike);
+      console.log(upStrike);
+      console.log(downStrike);
+      let exit = entries.pop();
       setDownStrike(strike.current - 200);
-      console.log("Sold - " + downStrike + " CE");
+      setUpStrike(strike.current + 200);
+      console.log("Exited - " + exit + " CE");
     }
+
+    // downside
+    if (btc <= downStrike && downStrike < entryStrike) {
+      console.log(entryStrike);
+      console.log(upStrike);
+      console.log(downStrike);
+      entries.push(upStrike);
+      setDownStrike(strike.current - 200);
+      setUpStrike(strike.current + 200);
+      console.log("Sold - " + downStrike + " PE");
+    }
+    if (btc >= upStrike && upStrike <= entryStrike) {
+      console.log(entryStrike);
+      console.log(upStrike);
+      console.log(downStrike);
+      let exit = entries.pop();
+      setUpStrike(strike.current + 200);
+      setDownStrike(strike.current - 200);
+      console.log("Exited - " + exit + " CE");
+      // setPeCount(peCount = peCount + 1);
+    }
+    console.log("Monitoring...");
   }
 
+  useEffect(() => {
+    if (isTradePlaced) {
+      if (btc >= upStrike && upStrike > entryStrike) {
+        console.log(entryStrike);
+        console.log(upStrike);
+        console.log(downStrike);
+        entries.push(upStrike);
+        setUpStrike(strike.current + 200);
+        setDownStrike(strike.current - 200);
+        console.log("Sold - " + upStrike + " PE");
+        // setPeCount(peCount = peCount + 1);
+      }
+      if (btc <= downStrike && downStrike >= entryStrike) {
+        console.log(entryStrike);
+        console.log(upStrike);
+        console.log(downStrike);
+        let exit = entries.pop();
+        setDownStrike(strike.current - 200);
+        setUpStrike(strike.current + 200);
+        console.log("Exited - " + exit + " CE");
+      }
 
+      // downside
+      if (btc <= downStrike && downStrike < entryStrike) {
+        console.log(entryStrike);
+        console.log(upStrike);
+        console.log(downStrike);
+        entries.push(upStrike);
+        setDownStrike(strike.current - 200);
+        setUpStrike(strike.current + 200);
+        console.log("Sold - " + downStrike + " PE");
+      }
+      if (btc >= upStrike && upStrike <= entryStrike) {
+        console.log(entryStrike);
+        console.log(upStrike);
+        console.log(downStrike);
+        let exit = entries.pop();
+        setUpStrike(strike.current + 200);
+        setDownStrike(strike.current - 200);
+        console.log("Exited - " + exit + " CE");
+        // setPeCount(peCount = peCount + 1);
+      }
+      console.log("Monitoring...");
+    }
+  }, [count])
   // Start trading
-  let count = 0;
+  // let count = 0;
   function check() {
-    count++;
-    console.log(count);
+    setCount(count = count + 1);
   }
   function startTrading() {
+    console.log("Monitoring Trades 🟢");
     intervalId.current = setInterval(check, 1000)
-    // setFeed(feedIntervalId);
-    console.log('Trade Monitor started ✔');
   }
   function stopTrading() {
+    console.log("Trade Monitor Stopped 🔴");
     clearInterval(intervalId.current)
-    console.log('Trade Monitor Stopped ❌');
   }
 
   return (
@@ -78,15 +162,20 @@ function StrategyOne(props) {
         {/* <div>CE Count - {ceCount}</div> */}
         {/* <div>PE Count - {peCount}</div> */}
       </div>
-      <button onClick={trade}>Start Trading</button>
-      <button onClick={startTrading}>Start</button>
-      <button onClick={stopTrading}>Stop</button>
       <div>
-        {
-          entries.items.map((item)=>{
-            return <span key={item}>{item}</span>
-          })
-        }
+        <button onClick={trade}>Start Trading</button>
+        {/* <button onClick={startTrading}>Start</button> */}
+        <button onClick={stopTrading}>Stop Trading</button>
+      </div>
+      <div>
+        <div>Entries</div>
+        <div>
+          {
+            entries.items.map((item) => {
+              return <div key={item}>{item}</div>
+            })
+          }
+        </div>
       </div>
     </div>
   )
