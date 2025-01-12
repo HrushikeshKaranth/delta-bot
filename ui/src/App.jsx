@@ -1,8 +1,8 @@
 import './Styles/style.css'
 import { useEffect, useRef, useState } from "react";
 import StrategyOne from "./Components/StrategyOne";
-import { getProfileInfo } from "./Helpers/HelperFunctions";
-// import axios from './Helpers/Axios';
+import { getProfileInfo, api_key, getHeaders, getProductId, generateSignature, api_secret } from "./Helpers/HelperFunctions";
+import axios from './Helpers/Axios';
 // import CryptoJS from "crypto-js";
 
 function App() {
@@ -66,6 +66,41 @@ function App() {
     console.log("Price stream closed 🔴");
   }
 
+  async function placeOrder(){
+    // const headers =  getHeaders();
+    let api_secret = "QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY"
+    let symbol = 'C-BTC-'+btcStrike.up+'-130125'
+    let payload  = {
+      "product_id": await getProductId(symbol),
+      "size": 10,
+      "side": "sell",
+      "order_type": "market_order"
+    }
+    payload = JSON.stringify(payload);
+    const method = 'POST'
+    const path = '/v2/orders'
+    const query_string = ''
+    // timestamp in epoch unix format
+    const timestamp = Date.now() / 1000 | 0
+    const signature_data = method + timestamp + path + query_string + payload;
+    const signature = generateSignature(api_secret, signature_data)   
+    let reqHeaders = {
+      'api-key': api_key,
+      'timestamp': timestamp,
+      'signature': signature,
+      'Content-Type': 'application/json'
+  }
+    await axios({
+      method: 'POST',
+      url: '/orders',
+      headers: reqHeaders,
+      data: payload  // 'data' is used instead of 'body' in axios
+  })
+    .then((res)=>{console.log(res);})
+    .catch((err)=>{console.log(err);})
+
+  }
+
   return (
     <>
       <div className="main">
@@ -103,6 +138,9 @@ function App() {
 
         <div>
           <StrategyOne bitcoin={btc} btcStrike={btcStrike} />
+        </div>
+        <div>
+          <button onClick={placeOrder}>Place order</button>
         </div>
       </div>
     </>

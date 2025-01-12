@@ -20,3 +20,27 @@ price goes down one strike we sell call
 
 if price reverses down from strike we exit sold put
 if price reverses up from strike we exit sold call
+
+
+
+
+# Place new order
+method = 'POST'
+timestamp = get_time_stamp()
+path = '/v2/orders'
+query_string = ''
+payload = "{\"order_type\":\"limit_order\",\"size\":3,\"side\":\"buy\",\"limit_price\":\"0.0005\",\"product_id\":16}"
+signature_data = method + timestamp + path + query_string + payload
+signature = generate_signature(api_secret, signature_data)
+
+req_headers = {
+  'api-key': api_key,
+  'timestamp': timestamp,
+  'signature': signature,
+  'User-Agent': 'rest-client',
+  'Content-Type': 'application/json'
+}
+
+response = requests.request(
+    method, url, data=payload, params={}, timeout=(3, 27), headers=req_headers
+)

@@ -95,9 +95,9 @@ function StrategyOne(props) {
         console.log(upStrike);
         console.log(downStrike);
         entries.push(upStrike);
+        console.log("Sold - " + upStrike + " PE");
         setUpStrike(strike.current + 200);
         setDownStrike(strike.current - 200);
-        console.log("Sold - " + upStrike + " PE");
         // setPeCount(peCount = peCount + 1);
       }
       if (btc <= downStrike && downStrike >= entryStrike) {
@@ -105,9 +105,9 @@ function StrategyOne(props) {
         console.log(upStrike);
         console.log(downStrike);
         let exit = entries.pop();
+        console.log("Exited - " + exit + " CE");
         setDownStrike(strike.current - 200);
         setUpStrike(strike.current + 200);
-        console.log("Exited - " + exit + " CE");
       }
 
       // downside
@@ -115,19 +115,19 @@ function StrategyOne(props) {
         console.log(entryStrike);
         console.log(upStrike);
         console.log(downStrike);
-        entries.push(upStrike);
+        entries.push(downStrike);
+        console.log("Sold - " + downStrike + " PE");
         setDownStrike(strike.current - 200);
         setUpStrike(strike.current + 200);
-        console.log("Sold - " + downStrike + " PE");
       }
       if (btc >= upStrike && upStrike <= entryStrike) {
         console.log(entryStrike);
         console.log(upStrike);
         console.log(downStrike);
         let exit = entries.pop();
+        console.log("Exited - " + exit + " CE");
         setUpStrike(strike.current + 200);
         setDownStrike(strike.current - 200);
-        console.log("Exited - " + exit + " CE");
         // setPeCount(peCount = peCount + 1);
       }
       console.log("Monitoring...");
