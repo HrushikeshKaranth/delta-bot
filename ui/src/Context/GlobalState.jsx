@@ -7,6 +7,7 @@ const initialState = {
     transactions: [],
     btc_mark_price: 0,
     btc_current_strike: 0,
+    strike_distance : 200,
     error: null,
     loading: true
 }
@@ -133,6 +134,7 @@ export const GlobalProvider = ({ children }) => {
             loading: state.loading,
             btc_mark_price: state.btc_mark_price,
             btc_current_strike: state.btc_current_strike,
+            strike_distance: state.strike_distance,
             getTransactions,
             deleteTransaction,
             addTransaction,
