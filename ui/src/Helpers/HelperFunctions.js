@@ -53,6 +53,7 @@ export function getHeaders(payload){
         'Content-Type': 'application/json',
     }
 }
+
 // Function to get profile details
 export async function getProfileInfo() {
 
@@ -79,12 +80,11 @@ export async function getProfileInfo() {
                 console.log(res);
                 username = res.data.result.nick_name
                 email = res.data.result.email
-                //   setUsername(res.data.result.nick_name)
-                //   setEmail(res.data.result.email)
             }
         })
         .catch((err) => {
             console.log(err);
+            return(false);
         })
     return { username, email };
 }

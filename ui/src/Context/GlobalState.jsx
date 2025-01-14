@@ -1,13 +1,12 @@
 import React, { createContext, useReducer, useRef } from "react";
 import AppReducer from './AppReducer'
-import axios from 'axios';
+import { generateSignature } from '../Helpers/HelperFunctions'
 
 // Initial state
 const initialState = {
-    transactions: [],
     btc_mark_price: 0,
     btc_current_strike: 0,
-    strike_distance : 200,
+    strike_distance: 200,
     error: null,
     loading: true
 }
@@ -15,131 +14,133 @@ const initialState = {
 // Create context
 export const GlobalContext = createContext(initialState);
 
+
 // Api info
+export const PROD_API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
+export const PROD_API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
 export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
 export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
-
-// Subscribe body for Bitcoin
-const subscribe = {
-    "type": "subscribe",
-    "payload": {
-        "channels": [
-            {
-                "name": "v2/ticker",
-                "symbols": [
-                    "BTCUSD"
-                ]
-            }
-        ]
-    }
-}
+export const BTC_STRIKE_DISTANCE = 500;
+const produrl = "wss://socket.india.delta.exchange";
+const testurl = "wss://socket-ind.testnet.deltaex.org";
+// -----
 
 // Provider component
 export const GlobalProvider = ({ children }) => {
-
-    // Creating websocket 
-    const wsRef = useRef();
-    if (!wsRef.current) { wsRef.current = new WebSocket('wss://socket.india.delta.exchange') }
-
+    // Reducer function
     const [state, dispatch] = useReducer(AppReducer, initialState);
 
-    // Function to start web socket and stream price updates
-    function getQuotes() {
-        wsRef.current.onopen = (event) => {
-            wsRef.current.send(JSON.stringify(subscribe));
+    // Creating WebSocket connection
+    const wsRefLive = useRef();
+    if (!wsRefLive.current) { wsRefLive.current = new WebSocket(testurl) }
+
+    // Authentication details for private channels
+    const method = 'GET';
+    const timestamp = Date.now() / 1000 | 0;
+    const path = '/live';
+    const signatureData = method + timestamp + path;
+    const signature = generateSignature(API_SECRET, signatureData);
+
+    // Function to start web socket
+    function startWs() {
+        // message body for authentication request
+        const message = {
+            type: "auth",
+            payload: {
+                "api-key": API_KEY,
+                "signature": signature,
+                "timestamp": timestamp
+            }
         };
-        wsRef.current.onmessage = function (event) {
+
+        // Web socket on-open event
+        wsRefLive.current.onopen = (event) => {
+            wsRefLive.current.send(JSON.stringify(message));
+            // console.log(event.data);
+        };
+
+        // Web socket on-message event
+        wsRefLive.current.onmessage = function (event) {
             let json;
             try {
                 json = JSON.parse(event.data);
-                if (json.symbol === "BTCUSD") {
+
+                // for updating bitcoin realtime price
+                if (json.price) {
                     dispatch({
                         type: 'SET_BTC_PRICE',
-                        payload: parseInt(json.mark_price)
+                        payload: parseInt(JSON.parse(event.data).price)
                     })
                 }
-                // if (json.symbol === "BTCUSD") setBtc(parseInt(json.mark_price))
-            } catch (err) { console.log(err) }
+
+                // For Authentication purpose 
+                if(json.message){
+                    if (JSON.parse(event.data).message == 'Authenticated') {
+                        console.log("Authentication Successfull 🟢 ");
+                    }
+                }
+
+            } catch (err) { console.log("Waiting for Data...") }
         };
-        wsRef.current.onopen();
-        wsRef.current.onmessage();
-        console.log('Price stream started 🟢');
+
+        // Calling on-open and on-message functions
+        wsRefLive.current.onopen();
+        wsRefLive.current.onmessage();
     }
 
-    // Function to close web socket
-    function closeQuotes() {
-        wsRef.current.close();
-        console.log("Price stream closed 🔴");
-    }
-
-    // Actions
-    async function getTransactions() {
-        try {
-            const res = await axios.get('/api/v1/transactions/');
-
-            dispatch({
-                type: 'GET_TRANSACTIONS',
-                payload: res.data.data
-            })
-        } catch (error) {
-            dispatch({
-                type: 'TRANSACTIONS_ERROR',
-                payload: error.response.data.error
-            });
-        }
-    }
-    async function deleteTransaction(id) {
-        try {
-            await axios.delete(`/api/v1/transactions/${id}`);
-
-            dispatch({
-                type: 'DELETE_TRANSACTION',
-                payload: id
-            });
-        } catch (error) {
-            dispatch({
-                type: 'TRANSACTIONS_ERROR',
-                payload: error.response.data.error
-            });
-        }
-    }
-
-    async function addTransaction(transaction) {
-        const config = {
-            headers: {
-                'Content-Type': 'application/json'
+    // Function to subscribe to the bitcoin realtime data
+    function getQuotesLive() {
+        // Subscribe body for Bitcoin
+        const subscribeBtc = {
+            "type": "subscribe",
+            "payload": {
+                "channels": [
+                    {
+                        "name": "spot_price",
+                        "symbols": [
+                            ".DEXBTUSD"
+                        ]
+                    }
+                ]
             }
         }
 
-        try {
-            const res = await axios.post('/api/v1/transactions/', transaction, config);
+        wsRefLive.current.send(JSON.stringify(subscribeBtc));
+        console.log('Price stream started 🟢');
+    }
 
-            dispatch({
-                type: 'ADD_TRANSACTION',
-                payload: res.data.data
-            });
-
-        } catch (error) {
-            dispatch({
-                type: 'TRANSACTIONS_ERROR',
-                payload: error.response.data.error
-            });
+    // Function to unsubscribe bitcoin realtime data
+    function closeQuotesLive() {
+        // Unsubscribe body for Bitcoin
+        const unSubscribeBtc = {
+            "type": "unsubscribe",
+            "payload": {
+                "channels": [
+                    {
+                        "name": "spot_price",
+                        "symbols": [
+                            ".DEXBTUSD"
+                        ]
+                    }
+                ]
+            }
         }
+
+        wsRefLive.current.send(JSON.stringify(unSubscribeBtc));
     }
 
     return (
         <GlobalContext.Provider value={{
-            transactions: state.transactions,
+            api_key: API_KEY,
+            api_secret: API_SECRET,
             error: state.error,
             loading: state.loading,
             btc_mark_price: state.btc_mark_price,
             btc_current_strike: state.btc_current_strike,
-            strike_distance: state.strike_distance,
-            getTransactions,
-            deleteTransaction,
-            addTransaction,
-            getQuotes,
-            closeQuotes
+            strike_distance: BTC_STRIKE_DISTANCE,
+            startWs,
+            getQuotesLive,
+            closeQuotesLive
         }}>
             {children}
         </GlobalContext.Provider>

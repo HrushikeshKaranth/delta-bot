@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { getProfileInfo } from "../Helpers/HelperFunctions";
+import { GlobalContext } from '../Context/GlobalState';
 
 function Login() {
+    const { startWs } = useContext(GlobalContext);
+
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     return (
@@ -14,11 +17,16 @@ function Login() {
             <div className="login">
                 <button className="loginButton"
                     onClick={async () => {
-                        let data = await getProfileInfo();
-                        setUsername(data.username);
-                        setEmail(data.email);
+                        let data1 = await getProfileInfo();
+                        await startWs();
+                        if (data1) {
+                            setUsername(data1.username);
+                            setEmail(data1.email);
+                        } else {
+                            console.log("Couldn't Authenticate! ");
+                        }
                     }}
-                >Login</button>
+                >Authenticate</button>
             </div>
         </>
     )
