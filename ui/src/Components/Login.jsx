@@ -7,11 +7,15 @@ function Login() {
 
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
+
+    function logout(){
+        localStorage.clear();
+    }
     return (
         <>
             <div className="name">
-                <div><u>Username</u> - {username}</div>
-                <div><u>Email</u> - {email}</div>
+                <div><u>Uname</u> - {username}</div>
+                <div><u>E-mail</u> - {email}</div>
             </div>
 
             <div className="login">
@@ -27,7 +31,9 @@ function Login() {
                         }
                     }}
                 >Authenticate</button>
+                <button onClick={logout}>Logout</button>
             </div>
+            
         </>
     )
 }

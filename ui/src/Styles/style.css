@@ -65,3 +65,23 @@ Button:active{
     gap: 1rem;
 }
 
+.entries{
+    display: flex;
+}
+.entries> div{
+    display: flex;
+    flex-direction: column;
+    border: 2px solid rgb(84, 84, 84);
+    padding: .2rem;
+    gap: .5rem;
+}
+
+.jsonStrikes{
+    display: flex;
+    flex-direction: column;
+}
+
+.login{
+    display: flex;
+    gap: 1rem;
+}

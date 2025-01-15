@@ -6,7 +6,7 @@ import { generateSignature } from '../Helpers/HelperFunctions'
 const initialState = {
     btc_mark_price: 0,
     btc_current_strike: 0,
-    strike_distance: 200,
+    strike_distance: 0,
     error: null,
     loading: true
 }
@@ -14,13 +14,12 @@ const initialState = {
 // Create context
 export const GlobalContext = createContext(initialState);
 
-
 // Api info
 export const PROD_API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
 export const PROD_API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
 export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
 export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
-export const BTC_STRIKE_DISTANCE = 500;
+export const BTC_STRIKE_DISTANCE = 200;
 const produrl = "wss://socket.india.delta.exchange";
 const testurl = "wss://socket-ind.testnet.deltaex.org";
 // -----
