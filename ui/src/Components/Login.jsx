@@ -8,8 +8,9 @@ function Login() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
 
-    function logout(){
+    function clearCache(){
         localStorage.clear();
+        console.log("Cache cleared!");
     }
     return (
         <>
@@ -22,8 +23,8 @@ function Login() {
                 <button className="loginButton"
                     onClick={async () => {
                         let data1 = await getProfileInfo();
-                        await startWs();
                         if (data1) {
+                            await startWs();
                             setUsername(data1.username);
                             setEmail(data1.email);
                         } else {
@@ -31,7 +32,7 @@ function Login() {
                         }
                     }}
                 >Authenticate</button>
-                <button onClick={logout}>Logout</button>
+                <button onClick={clearCache}>Clear Cache</button>
             </div>
             
         </>

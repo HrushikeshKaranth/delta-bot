@@ -116,7 +116,7 @@ function StrategyOne() {
         localStorage.setItem("openStrikes", open);
         localStorage.setItem("closedStrikes", closed);
       }
-      console.log("Monitoring...");
+      console.log("Monitoring... 🟢");
     }
   }, [count])
 
@@ -126,8 +126,8 @@ function StrategyOne() {
     setCount(count = count + 1);
   }
   function startTrading() {
-    console.log("Monitoring Trades 🟢");
-    intervalId.current = setInterval(check, 1000)
+    // console.log("Monitoring Trades 🟢");
+    intervalId.current = setInterval(check, 500)
   }
   function stopTrading() {
     console.log("Trade Monitor Stopped 🔴");

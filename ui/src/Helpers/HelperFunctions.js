@@ -77,7 +77,7 @@ export async function getProfileInfo() {
     await axios.get('/profile', { headers: req_headers })
         .then((res) => {
             if (res) {
-                console.log(res);
+                // console.log(res);
                 username = res.data.result.nick_name
                 email = res.data.result.email
             }
