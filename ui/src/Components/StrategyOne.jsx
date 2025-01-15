@@ -127,7 +127,7 @@ function StrategyOne() {
   }
   function startTrading() {
     // console.log("Monitoring Trades 🟢");
-    intervalId.current = setInterval(check, 500)
+    intervalId.current = setInterval(check, 1000)
   }
   function stopTrading() {
     console.log("Trade Monitor Stopped 🔴");

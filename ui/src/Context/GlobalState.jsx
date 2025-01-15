@@ -2,6 +2,10 @@ import React, { createContext, useEffect, useReducer, useRef, useState } from "r
 import AppReducer from './AppReducer'
 import { generateSignature } from '../Helpers/HelperFunctions';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
+import axios from "../Helpers/Axios";
+import CryptoJS from "crypto-js";
+
+
 // Initial state
 const initialState = {
     btc_mark_price: 0,
@@ -26,76 +30,59 @@ const testurl = "wss://socket-ind.testnet.deltaex.org";
 
 // Provider component
 export const GlobalProvider = ({ children }) => {
+    // Reference variable for web socket
     const wsRefLive = useRef(null);
 
-    // Creating WebSocket connection
-    
-    //   useEffect(() => {
-        //     // Open WebSocket on component mount
-        //     startWs();
-        //     // Cleanup WebSocket on component unmount
-        //     return () => {
-//       if (wsRefLive.current) {
-    //         wsRefLive.current.close();
-    //       }
-    //     };
-    //   }, []);
-    
     // Reducer function
     const [state, dispatch] = useReducer(AppReducer, initialState);
-    
+
+    // States
     const [isConnected, setIsConnected] = useState(false);
+    const [isAuth, setIsAuth] = useState(true);
     const [connectionLight, setConnectionLight] = useState('🟡');
-    
-    
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
+    let [check, setCheck] = useState(0);
+
+    // Reference variable for setInterval function
+    let intervalId = useRef();
+
+    function checkConnection() {
+        setIsConnected(true);
+        setCheck(check = check + 1);
+    }
+    // intervalId.current = setInterval(checkConnection, 5000);
+
+    // Periodically check and reset connection if it's down 
+    useEffect(() => {
+        if (isConnected) {
+            if (!isAuth) {
+                restartWs();
+            }
+            else {
+                // console.log('Connected'); 
+            }
+        }
+        else { console.log('Not connected'); }
+
+    }, [check])
+
+    // Function to call for authentication 
+    function auth() {
+        if (getProfileInfo()) startWs();
+        else { window.location.reload() }
+    }
+
     // Authentication details for private channels
     const method = 'GET';
     const timestamp = Date.now() / 1000 | 0;
     const path = '/live';
     const signatureData = method + timestamp + path;
     const signature = generateSignature(API_SECRET, signatureData);
-    let [check, setCheck] = useState(0);
-    let intervalId = useRef();
 
-    // let intervalId = interval.current;
-    const heartbeat = 0;
-
-    function checkConnection(){
-        setCheck(check = check + 1)
-    }
-    intervalId = setInterval(checkConnection, 5000);
-    useEffect(()=>{
-        if(isConnected){
-            if (!wsRefLive.current || wsRefLive.current.readyState == WebSocket.CLOSED) {
-                console.log('Web Socket Connection is Closed');
-            } //check if websocket instance is closed, try to restart
-            else{
-                startWs();
-                console.log('Web Socket Connection is now Open');
-                console.log(wsRefLive.current.readyState);
-                // clearInterval(intervalId);
-            }
-        }
-        else{
-            console.log('idk');
-            wsRefLive.current = null;
-            startWs();
-            // // intervalId = setInterval(checkConnection, 5000);
-            // if (!wsRefLive.current || wsRefLive.current.readyState == WebSocket.CLOSED) {
-            //     startWs();
-            //     // console.log('Web Socket Connection is Closed');
-            // } 
-            // else{console.log(wsRefLive.current.readyState);}
-        }
-        console.log(wsRefLive.current.readyState);
-     },[isConnected,check])
-    
-    // Function to start web socket
-    // console.log(intervalId);
+    // Function to start web socket and authorize private channel for realtime data
     function startWs() {
-        // clearInterval(intervalId.current);
         if (!wsRefLive.current) wsRefLive.current = new WebSocket(testurl);
-
         // message body for authentication request
         const message = {
             type: "auth",
@@ -106,95 +93,127 @@ export const GlobalProvider = ({ children }) => {
             }
         };
 
+        setIsConnected(true);
+        // console.log('here');
         // Web socket on-open event
         wsRefLive.current.onopen = (event) => {
-            // console.log('On open');
-            if(wsRefLive.current.readyState == WebSocket.OPEN){
+            if (wsRefLive.current.readyState == WebSocket.OPEN) {
                 wsRefLive.current.send(JSON.stringify(message));
             }
-            // intervalId = setInterval(() => {
-                //     wsRefLive.current.send(JSON.stringify(heartbeat));
-                // }, 36000);
-                // console.log(event.data);
-            };
-            
-            
-            // Web socket on-message event
-            wsRefLive.current.onmessage = (event) => {
-                let json;
-                try {
-                    // console.log(event);
-                    if (event != null) {
-                        json = JSON.parse(event.data);
-                    }
-                    else{setConnectionLight('🔴')}
-                    
-                    // for updating bitcoin realtime price
-                    if (json != null && json.p) {
+        };
+
+        // Web socket on-close event
+        wsRefLive.current.onclose = (event) => {
+            console.log('Connection closed!');
+            setIsAuth(false);
+            setConnectionLight('🔴');
+            if (intervalId.current) clearInterval(intervalId.current);
+            intervalId.current = setInterval(checkConnection, 5000);
+        };
+
+        // Web socket on-message event
+        wsRefLive.current.onmessage = (event) => {
+            let json;
+            try {
+                if (event != null) {
+                    json = JSON.parse(event.data);
+                }
+                else { setConnectionLight('🔴') }
+
+                // for updating bitcoin realtime price
+                if (json != null && json.p) {
                     dispatch({
                         type: 'SET_BTC_PRICE',
                         payload: parseInt(JSON.parse(event.data).p)
                     });
                     setConnectionLight('🟢');
                 }
-                else(setConnectionLight('🔴'));
-                
+                else (setConnectionLight('🔴'));
+
                 // For Authentication purpose 
                 if (json != null && json.message) {
                     if (JSON.parse(event.data).message == 'Authenticated') {
                         console.log("User Authentication Successfull 🟢 ");
-                        setIsConnected(true);
                         setConnectionLight('🟢');
-                        // clearInterval(intervalId);
-                        clearInterval(intervalId.current);
+                        setIsAuth(true);
+                        getQuotesLive();
+                        if (intervalId.current) clearInterval(intervalId.current);
+                        intervalId.current = setInterval(checkConnection, 5000);
                     }
-                    else { 
+                    else {
                         console.log("User Authentication Failed 🔴");
+                        setIsAuth(false);
                         setConnectionLight('🟡');
-                        setIsConnected(false);
-                        intervalId = setInterval(checkConnection, 5000);
-                        // wsRefLive.current.close();
-                        // intervalId.current = setInterval(() => {
-                        //     console.log('In interval - Reconnecting ...');
-                            // restartWs();
-                        // }, 5000);
-                     }
+                        if (intervalId.current) clearInterval(intervalId.current);
+                        intervalId.current = setInterval(checkConnection, 5000);
+                        // if (wsRefLive.current != null) wsRefLive.current.close();
+                    }
                 }
-
             } catch (err) { console.log(err) }
         };
 
-        // Web socket on-close event
-        wsRefLive.current.onclose = (event) => {
-            console.log('In on close event');
-            console.log('Web Socket connection closed!');
-            setIsConnected(false);
-            setConnectionLight('🔴');
-            // intervalId.current = setInterval(() => {
-            //     console.log('In interval - Reconnecting ...');
-            //     restartWs();
-            // }, 5000);
-        };
-
         // Calling on-open and on-message functions
-        // wsRefLive.current.onopen();
-        // wsRefLive.current.onmessage();
+        wsRefLive.current.onopen();
+        wsRefLive.current.onmessage();
     }
 
     // Function to reconnect to web socket if connection fails
-    function restartWs(){
-        console.log('In restart function');
-        if (!wsRefLive.current) { 
-            console.log('Trying to close existing connection');
-            wsRefLive.current.close();
-            // wsRefLive.current = null;
-        }
-        else {
-            console.log('calling start function');
+    function restartWs() {
+
+        if (!wsRefLive.current || wsRefLive.current.readyState == WebSocket.CLOSED) {
+            console.log('Resetting Connection 1 🟡');
+            wsRefLive.current = null;
             startWs();
-            // wsRefLive.current = new WebSocket(testurl);
+        }
+        if (wsRefLive.current == null) {
+            console.log('Resetting Connection 2 🟡');
+            startWs();
         }
     }
+
+    // Function to generate Signature for Api Authentication
+    function generateSignature(secret, message) {
+        const secretBytes = CryptoJS.enc.Utf8.parse(secret); // Convert secret to bytes
+        const messageBytes = CryptoJS.enc.Utf8.parse(message); // Convert message to bytes
+
+        // HMAC-SHA256 calculation
+        const hash = CryptoJS.HmacSHA256(messageBytes, secretBytes);
+
+        // Convert to hexadecimal string
+        const signature = hash.toString(CryptoJS.enc.Hex);
+        return signature;
+    }
+
+    // Function to get profile details
+    async function getProfileInfo() {
+
+        const payload = ''
+        const method = 'GET'
+        const path = '/v2/profile'
+        const query_string = ''
+        // timestamp in epoch unix format
+        const timestamp = Date.now() / 1000 | 0
+        const signature_data = method + timestamp + path + query_string + payload
+        const signature = generateSignature(API_SECRET, signature_data)
+
+        const req_headers = {
+            'api-key': API_KEY,
+            'timestamp': timestamp,
+            'signature': signature,
+            'Content-Type': 'application/json',
+        }
+
+        await axios.get('/profile', { headers: req_headers })
+            .then((res) => {
+                if (res) {
+                    setUsername(res.data.result.nick_name);
+                    setEmail(res.data.result.email);
+                    return true;
+                }
+            })
+            .catch((err) => { return false })
+    }
+
     // Function to subscribe to the bitcoin realtime data
     function getQuotesLive() {
         // Subscribe body for Bitcoin
@@ -250,11 +269,18 @@ export const GlobalProvider = ({ children }) => {
             wsResetRef: intervalId.current,
             isConnected,
             connectionLight,
+            username,
+            email,
+            check,
+            auth,
+            setIsConnected,
             setConnectionLight,
+            getProfileInfo,
             startWs,
             restartWs,
             getQuotesLive,
-            closeQuotesLive
+            closeQuotesLive,
+            checkConnection
         }}>
             {children}
         </GlobalContext.Provider>

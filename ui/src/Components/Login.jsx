@@ -1,17 +1,16 @@
-import React, { useContext, useState } from 'react'
-import { getProfileInfo } from "../Helpers/HelperFunctions";
+import React, { useContext, useEffect, useState } from 'react'
 import { GlobalContext } from '../Context/GlobalState';
+// import { getProfileInfo } from "../Helpers/HelperFunctions";
 
 function Login() {
-    const { startWs } = useContext(GlobalContext);
+    const { auth, username, email } = useContext(GlobalContext);
 
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-
+    // Function to clear local storage data
     function clearCache(){
         localStorage.clear();
-        console.log("Cache cleared!");
+        console.log("Storage cleared!");
     }
+
     return (
         <>
             <div className="name">
@@ -20,18 +19,7 @@ function Login() {
             </div>
 
             <div className="login">
-                <button className="loginButton"
-                    onClick={async () => {
-                        let data1 = await getProfileInfo();
-                        if (data1) {
-                            await startWs();
-                            setUsername(data1.username);
-                            setEmail(data1.email);
-                        } else {
-                            console.log("Couldn't Authenticate! ");
-                        }
-                    }}
-                >Authenticate</button>
+                <button className="loginButton" onClick={auth}>Authenticate</button>
                 <button onClick={clearCache}>Clear Cache</button>
             </div>
             
