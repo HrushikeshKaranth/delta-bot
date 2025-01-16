@@ -85,3 +85,17 @@ Button:active{
     display: flex;
     gap: 1rem;
 }
+
+.contract{
+    color: black;
+    /* border: 1px solid blue; */
+}
+.datepicker{
+    color: black;
+    /* border: 1px solid red; */
+}
+.contractDate{
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}

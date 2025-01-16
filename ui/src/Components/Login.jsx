@@ -14,8 +14,8 @@ function Login() {
     return (
         <>
             <div className="name">
-                <div><u>Uname</u> - {username}</div>
-                <div><u>E-mail</u> - {email}</div>
+                <div><u>Username</u> - {username}</div>
+                <div><u>Email</u> - {email}</div>
             </div>
 
             <div className="login">

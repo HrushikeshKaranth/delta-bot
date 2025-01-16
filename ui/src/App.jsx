@@ -8,12 +8,13 @@ import { GlobalProvider } from './Context/GlobalState';
 
 function App() {
 
-  async function placeOrder(){
+  function placeOrder(){
     // const headers =  getHeaders();
     let api_secret = "QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY"
-    let symbol = 'C-BTC-'+95000+'-130125'
+    let symbol = 'C-BTC-'+99200+'-170125'
+    // let id = getProductId(symbol)
     let payload  = {
-      "product_id": await getProductId(symbol),
+      "product_symbol": symbol,
       "size": 10,
       "side": "sell",
       "order_type": "market_order"
@@ -32,7 +33,7 @@ function App() {
       'signature': signature,
       'Content-Type': 'application/json'
   }
-    await axios({
+    axios({
       method: 'POST',
       url: '/orders',
       headers: reqHeaders,

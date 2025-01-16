@@ -93,11 +93,11 @@ export async function getProductId(symbol){
     let id = ''
     await axios.get(`/products/${symbol}`)
     .then((res)=>{
-    //   console.log(res);
-      id=res.data.result.id;
+      console.log(res);
+      id =  res.data.result.id;
     })
     .catch((err)=>{console.log(err);})
-    return id;
+    return parseInt(id);
   }
 
   async function placeOrder(){

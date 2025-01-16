@@ -1,7 +1,5 @@
 import React, { createContext, useEffect, useReducer, useRef, useState } from "react";
 import AppReducer from './AppReducer'
-import { generateSignature } from '../Helpers/HelperFunctions';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
 import axios from "../Helpers/Axios";
 import CryptoJS from "crypto-js";
 
@@ -23,7 +21,7 @@ export const PROD_API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
 export const PROD_API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
 export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
 export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
-export const BTC_STRIKE_DISTANCE = 500;
+export const BTC_STRIKE_DISTANCE = 200;
 const produrl = "wss://socket.india.delta.exchange";
 const testurl = "wss://socket-ind.testnet.deltaex.org";
 // -----
@@ -51,7 +49,12 @@ export const GlobalProvider = ({ children }) => {
         setIsConnected(true);
         setCheck(check = check + 1);
     }
-    // intervalId.current = setInterval(checkConnection, 5000);
+    // intervalId.current? clearInterval(intervalId.current):intervalId.current = setInterval(checkConnection, 5000);
+    // function clearCheck() { clearInterval(intervalId.current) }
+    function intervalSetter() {
+        if (intervalId.current) clearInterval(intervalId.current);
+        intervalId.current = setInterval(checkConnection, 5000);
+    }
 
     // Periodically check and reset connection if it's down 
     useEffect(() => {
@@ -97,6 +100,7 @@ export const GlobalProvider = ({ children }) => {
         // console.log('here');
         // Web socket on-open event
         wsRefLive.current.onopen = (event) => {
+            console.log('Initializing connection');
             if (wsRefLive.current.readyState == WebSocket.OPEN) {
                 wsRefLive.current.send(JSON.stringify(message));
             }
@@ -107,49 +111,59 @@ export const GlobalProvider = ({ children }) => {
             console.log('Connection closed!');
             setIsAuth(false);
             setConnectionLight('🔴');
-            if (intervalId.current) clearInterval(intervalId.current);
-            intervalId.current = setInterval(checkConnection, 5000);
+            intervalSetter();
         };
 
         // Web socket on-message event
         wsRefLive.current.onmessage = (event) => {
+            // console.log(event);
             let json;
             try {
-                if (event != null) {
+                if (event && 'data' in event) {
+                    // console.log('data exists');
                     json = JSON.parse(event.data);
+                    // console.log(json);
+                    // json = JSON.parse(event.data)
+                    // }
+                    // else { setConnectionLight('🔴') }
+
+                    // For Authentication purpose 
+                    if ('message' in json) {
+                        if (json.message == 'Authenticated') {
+                            console.log("User Authentication Successfull 🟢 ");
+                            setConnectionLight('🟢');
+                            setIsAuth(true);
+                            getQuotesLive();
+                            intervalSetter();
+                        }
+                        else {
+                            console.log("User Authentication Failed 🔴");
+                            console.log(json);
+                            setIsAuth(false);
+                            setConnectionLight('🟡');
+                            wsRefLive.current.close();
+                            // if (intervalId.current) clearInterval(intervalId.current);
+                            // intervalId.current = setInterval(checkConnection, 5000);
+                            // wsRefLive.current.send(JSON.stringify(message));
+                            // if (wsRefLive.current != null) wsRefLive.current.close();
+                        }
+                    }
+                    if ('price' in json) {
+                        dispatch({
+                            type: 'SET_BTC_PRICE',
+                            payload: parseInt(json.price)
+                        });
+                        setConnectionLight('🟢');
+                    }
+                    else (setConnectionLight('🔴'));
+
+                    // for updating bitcoin realtime price
                 }
                 else { setConnectionLight('🔴') }
-
-                // for updating bitcoin realtime price
-                if (json != null && json.p) {
-                    dispatch({
-                        type: 'SET_BTC_PRICE',
-                        payload: parseInt(JSON.parse(event.data).p)
-                    });
-                    setConnectionLight('🟢');
-                }
-                else (setConnectionLight('🔴'));
-
-                // For Authentication purpose 
-                if (json != null && json.message) {
-                    if (JSON.parse(event.data).message == 'Authenticated') {
-                        console.log("User Authentication Successfull 🟢 ");
-                        setConnectionLight('🟢');
-                        setIsAuth(true);
-                        getQuotesLive();
-                        if (intervalId.current) clearInterval(intervalId.current);
-                        intervalId.current = setInterval(checkConnection, 5000);
-                    }
-                    else {
-                        console.log("User Authentication Failed 🔴");
-                        setIsAuth(false);
-                        setConnectionLight('🟡');
-                        if (intervalId.current) clearInterval(intervalId.current);
-                        intervalId.current = setInterval(checkConnection, 5000);
-                        // if (wsRefLive.current != null) wsRefLive.current.close();
-                    }
-                }
-            } catch (err) { console.log(err) }
+            } catch (err) {
+                console.log(err);
+                wsRefLive.current.close();
+            }
         };
 
         // Calling on-open and on-message functions
@@ -161,12 +175,12 @@ export const GlobalProvider = ({ children }) => {
     function restartWs() {
 
         if (!wsRefLive.current || wsRefLive.current.readyState == WebSocket.CLOSED) {
-            console.log('Resetting Connection 1 🟡');
+            console.log('Resetting Connection 🟡');
             wsRefLive.current = null;
             startWs();
         }
         if (wsRefLive.current == null) {
-            console.log('Resetting Connection 2 🟡');
+            console.log('Resetting Connection 🟡');
             startWs();
         }
     }
@@ -222,7 +236,7 @@ export const GlobalProvider = ({ children }) => {
             "payload": {
                 "channels": [
                     {
-                        "name": "v2/spot_price",
+                        "name": "spot_price",
                         "symbols": [
                             ".DEXBTUSD"
                         ]
@@ -256,6 +270,54 @@ export const GlobalProvider = ({ children }) => {
         wsRefLive.current.close();
     }
 
+    function closeAllPosition() {
+        const method = 'POST'
+        const path = '/v2/positions/close_all'
+        // const query_string = ''
+        // timestamp in epoch unix format
+        const timestamp = Date.now() / 1000 | 0
+        const signature_data = method + timestamp + path;
+        const signature = generateSignature(API_SECRET, signature_data)
+        let reqHeaders = {
+            'Content-Type': 'application/json',
+            'api-key': API_KEY,
+            'signature': signature,
+            'timestamp': timestamp
+        }
+
+        axios({
+            method: 'POST',
+            url: '/positions/close_all',
+            headers: reqHeaders,
+        })
+            .then((res) => { console.log(res); })
+            .catch((err) => { console.log(err); })
+    }
+
+    // Function to generate Signature for Api Authentication
+    function generateSignature(secret, message) {
+        const secretBytes = CryptoJS.enc.Utf8.parse(secret); // Convert secret to bytes
+        const messageBytes = CryptoJS.enc.Utf8.parse(message); // Convert message to bytes
+
+        // HMAC-SHA256 calculation
+        const hash = CryptoJS.HmacSHA256(messageBytes, secretBytes);
+
+        // Convert to hexadecimal string
+        const signature = hash.toString(CryptoJS.enc.Hex);
+        return signature;
+    }
+
+    function getProductId(symbol) {
+        // let id = ''
+        axios.get(`/products/${symbol}`)
+            .then((res) => {
+                //   console.log(res);
+                return res.data.result.id;
+            })
+            .catch((err) => { console.log(err); return false })
+        // return id;
+    }
+
     return (
         <GlobalContext.Provider value={{
             api_key: API_KEY,
@@ -280,7 +342,11 @@ export const GlobalProvider = ({ children }) => {
             restartWs,
             getQuotesLive,
             closeQuotesLive,
-            checkConnection
+            checkConnection,
+            closeAllPosition,
+            generateSignature,
+            getProductId
+
         }}>
             {children}
         </GlobalContext.Provider>
