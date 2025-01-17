@@ -17,18 +17,18 @@ const initialState = {
 export const GlobalContext = createContext(initialState);
 
 // Api info
-//prod Api's
+//Prod API details
 export const API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
 export const API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
 const testurl = "wss://socket.india.delta.exchange";
 
-//test api's
+//Test API details
 // export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
 // export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
 // const testurl = "wss://socket-ind.testnet.deltaex.org";
+// -----
 
 export const BTC_STRIKE_DISTANCE = 100;
-// -----
 
 // Provider component
 export const GlobalProvider = ({ children }) => {
@@ -52,15 +52,21 @@ export const GlobalProvider = ({ children }) => {
     function checkConnection() {
         setIsConnected(true);
         setCheck(check = check + 1);
+        // netCheck();
     }
     // intervalId.current? clearInterval(intervalId.current):intervalId.current = setInterval(checkConnection, 5000);
     // function clearCheck() { clearInterval(intervalId.current) }
     function intervalSetter() {
         if (intervalId.current) clearInterval(intervalId.current);
         intervalId.current = setInterval(checkConnection, 5000);
+        // intervalId.current = setInterval(checkConnection, 5000);
     }
 
     // Periodically check and reset connection if it's down 
+    // function netCheck(){
+    //     if (isConnected && !isAuth) restartWs();
+    //     else console.log('Not connected'); 
+    // }
     useEffect(() => {
         if (isConnected) {
             if (!isAuth) {
@@ -77,7 +83,7 @@ export const GlobalProvider = ({ children }) => {
     // Function to call for authentication 
     function auth() {
         if (getProfileInfo()) startWs();
-        else { window.location.reload() }
+        else window.location.reload();
     }
 
     // Authentication details for private channels
@@ -90,7 +96,7 @@ export const GlobalProvider = ({ children }) => {
     // Function to start web socket and authorize private channel for realtime data
     function startWs() {
         if (!wsRefLive.current) wsRefLive.current = new WebSocket(testurl);
-        // message body for authentication request
+        // Message body for authentication request
         const message = {
             type: "auth",
             payload: {
@@ -124,12 +130,7 @@ export const GlobalProvider = ({ children }) => {
             let json;
             try {
                 if (event && 'data' in event) {
-                    // console.log('data exists');
                     json = JSON.parse(event.data);
-                    // console.log(json);
-                    // json = JSON.parse(event.data)
-                    // }
-                    // else { setConnectionLight('🔴') }
 
                     // For Authentication purpose 
                     if ('message' in json) {
@@ -146,12 +147,10 @@ export const GlobalProvider = ({ children }) => {
                             setIsAuth(false);
                             setConnectionLight('🟡');
                             wsRefLive.current.close();
-                            // if (intervalId.current) clearInterval(intervalId.current);
-                            // intervalId.current = setInterval(checkConnection, 5000);
-                            // wsRefLive.current.send(JSON.stringify(message));
-                            // if (wsRefLive.current != null) wsRefLive.current.close();
                         }
                     }
+
+                    // For streaming Realtime Bitcoin price data
                     if ('price' in json) {
                         dispatch({
                             type: 'SET_BTC_PRICE',
@@ -160,8 +159,6 @@ export const GlobalProvider = ({ children }) => {
                         setConnectionLight('🟢');
                     }
                     else (setConnectionLight('🔴'));
-
-                    // for updating bitcoin realtime price
                 }
                 else { setConnectionLight('🔴') }
             } catch (err) {
@@ -183,16 +180,23 @@ export const GlobalProvider = ({ children }) => {
             wsRefLive.current = null;
             startWs();
         }
-        if (wsRefLive.current == null) {
-            console.log('Resetting Connection 🟡');
+        else{
+            console.log('Force closing Web socket and Resetting connection');
+            wsRefLive.current = null;
             startWs();
+
         }
+        // if (wsRefLive.current == null) {
+        //     console.log('Resetting Connection 🟡');
+        //     startWs();
+        // }
     }
 
     // Function to generate Signature for Api Authentication
     function generateSignature(secret, message) {
-        const secretBytes = CryptoJS.enc.Utf8.parse(secret); // Convert secret to bytes
-        const messageBytes = CryptoJS.enc.Utf8.parse(message); // Convert message to bytes
+        // Convert secret and message to bytes-utf8
+        const secretBytes = CryptoJS.enc.Utf8.parse(secret); 
+        const messageBytes = CryptoJS.enc.Utf8.parse(message);
 
         // HMAC-SHA256 calculation
         const hash = CryptoJS.HmacSHA256(messageBytes, secretBytes);
@@ -209,8 +213,7 @@ export const GlobalProvider = ({ children }) => {
         const method = 'GET'
         const path = '/v2/profile'
         const query_string = ''
-        // timestamp in epoch unix format
-        const timestamp = Date.now() / 1000 | 0
+        const timestamp = Date.now() / 1000 | 0; // Timestamp in epoch unix format
         const signature_data = method + timestamp + path + query_string + payload
         const signature = generateSignature(API_SECRET, signature_data)
 
@@ -298,18 +301,18 @@ export const GlobalProvider = ({ children }) => {
             .catch((err) => { console.log(err); })
     }
 
-    // Function to generate Signature for Api Authentication
-    function generateSignature(secret, message) {
-        const secretBytes = CryptoJS.enc.Utf8.parse(secret); // Convert secret to bytes
-        const messageBytes = CryptoJS.enc.Utf8.parse(message); // Convert message to bytes
+    // // Function to generate Signature for Api Authentication
+    // function generateSignature(secret, message) {
+    //     const secretBytes = CryptoJS.enc.Utf8.parse(secret); // Convert secret to bytes
+    //     const messageBytes = CryptoJS.enc.Utf8.parse(message); // Convert message to bytes
 
-        // HMAC-SHA256 calculation
-        const hash = CryptoJS.HmacSHA256(messageBytes, secretBytes);
+    //     // HMAC-SHA256 calculation
+    //     const hash = CryptoJS.HmacSHA256(messageBytes, secretBytes);
 
-        // Convert to hexadecimal string
-        const signature = hash.toString(CryptoJS.enc.Hex);
-        return signature;
-    }
+    //     // Convert to hexadecimal string
+    //     const signature = hash.toString(CryptoJS.enc.Hex);
+    //     return signature;
+    // }
 
     function getProductId(symbol) {
         // let id = ''

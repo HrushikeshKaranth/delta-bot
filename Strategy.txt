@@ -1,12 +1,11 @@
-step 1 -	first entry -> short straddle with calender
+step 1 -	first entry -> short straddle
 
 step 2 -	if price [goes up] form straddle then [sell put] of [above] strike and if the price [comes back] exit the [sold put]
 
 step 3 -	if price [goes down] form straddle then [sell call] of [below] strike and if the price [comes back] exit the [sold put]
 
 adjustments
-
-- If the price keeps on going the we keep on selling in that direction and if the price reverses the we keep on exiting the sold contracts
+- If the price keeps on going the we keep on selling in that direction and if the price reverses then we keep on exiting the sold contracts
 _____________________________________
 
 
@@ -44,3 +43,11 @@ req_headers = {
 response = requests.request(
     method, url, data=payload, params={}, timeout=(3, 27), headers=req_headers
 )
+
+
+
+
+Example:
+Initial Entry: EntryPrice = 1000. Short straddle created at 1000. we will not exit this trade, this keeps untouched
+Price Up: At 1100, sell a put at 1100 and at 1200 sell put again, keep selling put at 100 points interval, Exit strikes when price reverses like this - from 1200 price reversed to 1100 then exit 1200 contract and from 1100 to 1000 the exit 1100 strike
+Price Down: vice versa of Price Up

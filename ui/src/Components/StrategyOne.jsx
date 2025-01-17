@@ -9,10 +9,10 @@ import axios from "../Helpers/Axios";
 function StrategyOne() {
   const { btc_mark_price, btc_current_strike, strike_distance, getProductId, generateSignature, api_key, api_secret, closeAllPosition } = useContext(GlobalContext);
   const [entryPrice, setEntryPrice] = useState(null);
-    const [currentPrice, setCurrentPrice] = useState(null);
-    const [positions, setPositions] = useState([]); // Array of open trades
-    const [tradeLog, setTradeLog] = useState([]); // To log trades for display
-    
+  const [currentPrice, setCurrentPrice] = useState(null);
+  const [positions, setPositions] = useState([]); // Array of open trades
+  const [tradeLog, setTradeLog] = useState([]); // To log trades for display
+
 
   const intervalId = useRef();
 
@@ -28,14 +28,14 @@ function StrategyOne() {
   const handleDateChange = (date) => {
     setSelectedDate(date);
     setContract(date ? format(date, 'ddMMyy') : '');
-    localStorage.setItem("contract", date ? format(date, 'ddMMyy') : '' );
+    localStorage.setItem("contract", date ? format(date, 'ddMMyy') : '');
   };
   const [openStrikes, setOpenStrikes] = useState({ 'data': [] }); let open = openStrikes.data;
   const [closedStrikes, setClosedStrikes] = useState({ 'data': [] }); let closed = closedStrikes.data;
   const [allStrikes, setAllStrikes] = useState({ 'data': [] }); let all = allStrikes.data;
   const [isReloaded, setIsReloaded] = useState(false);
-  const [UpStrikeCount, setUpStrikeCount] = useState(0);
-  const [DownStrikeCount, setDownStrikeCount] = useState(0);
+  const [isUpStrikePlaced, setIsUpStrikePlaced] = useState(false);
+  const [isDownStrikePlaced, setIsDownStrikePlaced] = useState(false);
   // console.log(contract);
 
   function getDataBack() {
@@ -57,24 +57,25 @@ function StrategyOne() {
     setIsReloaded(true);
   }
 
-  function getCallStrikeSymbol(strike){
-    return 'C-BTC-'+strike+'-'+contract;
-  } 
-  function getPutStrikeSymbol(strike){
-    return 'P-BTC-'+strike+'-'+contract;
-  } 
+  function getCallStrikeSymbol(strike) {
+    return 'C-BTC-' + strike + '-' + contract;
+  }
+  function getPutStrikeSymbol(strike) {
+    return 'P-BTC-' + strike + '-' + contract;
+  }
 
 
   const method = 'POST'
   const path = '/v2/orders'
   const query_string = ''
   // let api_secret = "QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY"
-  function placeOrder(symbol, side){
+
+  function placeOrder(symbol, side) {
     // const headers =  getHeaders();
     // let symbol = 'C-BTC-'+95000+'-130125'
-    console.log('Executing: '+ symbol);
+    console.log('Executing: ' + symbol);
     // let productId = getProductId(symbol);
-    let payload  = {
+    let payload = {
       "product_symbol": symbol,
       "size": 10,
       "side": side,
@@ -87,23 +88,23 @@ function StrategyOne() {
     // timestamp in epoch unix format
     const timestamp = Date.now() / 1000 | 0
     const signature_data = method + timestamp + path + query_string + payload;
-    const signature = generateSignature(api_secret, signature_data)   
+    const signature = generateSignature(api_secret, signature_data)
     let reqHeaders = {
       'api-key': api_key,
       'timestamp': timestamp,
       'signature': signature,
       'Content-Type': 'application/json'
-  }
+    }
     axios({
       method: 'POST',
       url: '/orders',
       headers: reqHeaders,
       data: payload  // 'data' is used instead of 'body' in axios
-  })
-    .then((res)=>{console.log(res);return true})
-    .catch((err)=>{console.log(err);return false})
+    })
+      .then((res) => { console.log(res); return true })
+      .catch((err) => { console.log(err); return false })
   }
-  
+
   function trade() {
     if (!isReloaded) {
       setEntryStrike(btc_current_strike);
@@ -112,8 +113,8 @@ function StrategyOne() {
       let call = getCallStrikeSymbol(btc_current_strike);
       let put = getPutStrikeSymbol(btc_current_strike);
       // let side = 'sell';
-      placeOrder(getCallStrikeSymbol(btc_current_strike),'sell')
-      placeOrder(getPutStrikeSymbol(btc_current_strike),'sell')
+      // placeOrder(getCallStrikeSymbol(btc_current_strike), 'sell')
+      // placeOrder(getPutStrikeSymbol(btc_current_strike), 'sell')
 
       console.log("Trading started 🟢");
       console.log("Sold - " + btc_current_strike + " CE and PE");
@@ -122,7 +123,7 @@ function StrategyOne() {
       setIsTradePlaced(true);
       startTrading();
 
-      all.push(btc_current_strike);
+      all.push(btc_current_strike + ' Short Straddle at - '+ btc_mark_price);
       localStorage.setItem("TimeStamp", new Date());
       localStorage.setItem("allStrikes", all);
       // localStorage.setItem("entryStrike", btc_current_strike);
@@ -136,38 +137,59 @@ function StrategyOne() {
 
   useEffect(() => {
     if (isTradePlaced) {
+
+      if (isUpStrikePlaced && btc_mark_price < entryStrike) {
+        let exit = open.pop();
+        all.push('Exited '+exit+' PE at - '+btc_mark_price);
+        setIsUpStrikePlaced(false);
+        setUpStrike(btc_current_strike + strike_distance);
+        setDownStrike(btc_current_strike - strike_distance);
+        console.log("Exited - " + exit + " PE");
+      }
+      else if (isDownStrikePlaced && btc_mark_price > entryPrice) {
+        let exit = open.pop();
+        all.push('Exited '+exit+' CE at - '+btc_mark_price);
+        setIsDownStrikePlaced(false);
+        setUpStrike(btc_current_strike + strike_distance);
+        setDownStrike(btc_current_strike - strike_distance);
+        console.log("Exited - " + exit + " CE");
+      }
       // upside
-      if(btc_mark_price > entryStrike){
+      if (btc_mark_price > entryStrike) {
+        // no downside entry should be present
         if (btc_mark_price >= upStrike) {
           // console.log(entryStrike);
           // console.log(upStrike);
           // console.log(downStrike);
           console.log("Sold - " + upStrike + " PE");
           // placeOrder(getPutStrikeSymbol(upStrike),'sell')
-          all.push(upStrike);
+          all.push('Sold '+upStrike+' PE at - '+btc_mark_price);
           open.push(upStrike);
           
+          setIsUpStrikePlaced(true);
+          setIsDownStrikePlaced(false);
           setUpStrike(btc_current_strike + strike_distance);
           setDownStrike(btc_current_strike - strike_distance);
-  
+
           localStorage.setItem("allStrikes", all);
           localStorage.setItem("openStrikes", open);
         }
-  
+
         if (btc_mark_price <= downStrike) {
           // console.log(entryStrike);
           // console.log(upStrike);
           // console.log(downStrike);
-  
+
           let exit = open.pop();
           console.log("Exited - " + exit + " PE");
           // placeOrder(getPutStrikeSymbol(exit),'buy')
-  
+
           closed.push(exit);
-  
+          all.push('Exited '+exit+' PE at - '+btc_mark_price);
+
           setDownStrike(btc_current_strike - strike_distance);
           setUpStrike(btc_current_strike + strike_distance);
-  
+
           localStorage.setItem("openStrikes", open);
           localStorage.setItem("closedStrikes", closed);
         }
@@ -181,9 +203,12 @@ function StrategyOne() {
         console.log("Sold - " + downStrike + " CE");
         // placeOrder(getCallStrikeSymbol(downStrike),'sell')
 
-        all.push(downStrike);
+        // all.push(downStrike);
+        all.push('Sold '+downStrike+' CE at - '+btc_mark_price);
         open.push(downStrike);
 
+        setIsUpStrikePlaced(false);
+        setIsDownStrikePlaced(true);
         setDownStrike(btc_current_strike - strike_distance);
         setUpStrike(btc_current_strike + strike_distance);
 
@@ -196,7 +221,7 @@ function StrategyOne() {
         // console.log(downStrike);
 
         let exit = open.pop();
-
+        all.push('Exited '+exit+' CE at - '+btc_mark_price);
         console.log("Exited - " + exit + " CE");
 
         // placeOrder(getCallStrikeSymbol(exit),'buy')
@@ -209,7 +234,10 @@ function StrategyOne() {
       }
       console.log("Monitoring... 🟢");
     }
-  }, [count])
+    else{
+      console.log('Not Trading anything');
+    }
+  }, [btc_mark_price])
 
 
   // Start trading
@@ -219,7 +247,7 @@ function StrategyOne() {
   function startTrading() {
     // console.log("Monitoring Trades 🟢");
     console.log("Trade Monitor Started 🟢");
-    intervalId.current = setInterval(check, 1000)
+    // intervalId.current = setInterval(check, 1000)
   }
   function stopTrading() {
     console.log("Trade Monitor Stopped 🔴");
@@ -259,24 +287,25 @@ function StrategyOne() {
         <button onClick={stopTrading}>Stop Trading</button>
         <button onClick={closeAllPosition}>Close Positions</button>
         <button onClick={getDataBack}>Reload</button>
+        {/* <button onClick={getDataBack}>Reset</button> */}
       </div>
       <div className="section3 entries">
         <div>
           <div><u>Open Entries</u></div>
           <div>
-            {openStrikes.data.map((item) => { return <div>{item}</div> })}
+            {openStrikes.data.map((item, idx) => { return <div key={idx}>{item}</div> })}
           </div>
         </div>
         <div>
           <div><u>Closed Entries</u></div>
           <div>
-            {closedStrikes.data.map((item) => { return <div>{item}</div> })}
+            {closedStrikes.data.map((item, idx) => { return <div key={idx}>{item}</div> })}
           </div>
         </div>
         <div>
           <div><u>All Entries</u></div>
           <div>
-            {allStrikes.data.map((item) => { return <div>{item}</div> })}
+            {allStrikes.data.map((item, idx) => { return <div key={idx}>{item}</div> })}
           </div>
         </div>
       </div>

@@ -13,49 +13,45 @@ function StrategyTwo() {
     // const [btc_mark_price, setbtc_mark_price] = useState(null);
     const [positions, setPositions] = useState([]); // Array of open trades
     const [tradeLog, setTradeLog] = useState([]); // To log trades for display
+    const [contract, setContract] = useState('')
+    const [selectedDate, setSelectedDate] = useState(null);
+    const handleDateChange = (date) => {
+        setSelectedDate(date);
+        setContract(date ? format(date, 'ddMMyy') : '');
+        localStorage.setItem("contract", date ? format(date, 'ddMMyy') : '');
+    };
     const [isTradePlaced, setIsTradePlaced] = useState(false);
+    const [nextLongLevel, setNextLongLevel] = useState(0)
+    const [nextShortLevel, setNextShortLevel] = useState(0)
+    // const nextLongLevel = 0;
+    // const nextShortLevel = 0;
     const socketUrl = "wss://example.com/prices"; // Replace with your WebSocket URL
 
-    function startTrading(){
+    function startTrading() {
         setEntryLevel(btc_current_strike);
         setIsTradePlaced(true);
+        // setNextLongLevel(entryLevel + strike_distance * positions.filter((p) => p.type === "long").length)
+        // console.log(nextLongLevel);
+        // setNextShortLevel(entryLevel + strike_distance * positions.filter((p) => p.type === "short").length)
+        // console.log(nextShortLevel);
+        // nextLongLevel = entryLevel + strike_distance * positions.filter((p) => p.type === "long").length;
+        // nextShortLevel = entryLevel + strike_distance * positions.filter((p) => p.type === "short").length;
         console.log("Trading started 🟢");
+        console.log("Entered trade at " + btc_current_strike);
     }
-    // useEffect(() => {
-    //     const socket = new WebSocket(socketUrl);
-
-    //     socket.onmessage = (event) => {
-    //         const data = JSON.parse(event.data); // Assuming the server sends data as JSON
-    //         const newPrice = data.price; // Replace 'price' with the actual key from your data
-    //         setbtc_mark_price(newPrice);
-
-    //         // Initialize entry price if not set
-    //         if (entryLevel === null) {
-    //             setentryLevel(newPrice);
-    //             console.log(`Entry price set at ${newPrice}`);
-    //         }
-    //     };
-
-    //     socket.onerror = (error) => {
-    //         console.error("WebSocket Error:", error);
-    //     };
-
-    //     socket.onclose = () => {
-    //         console.log("WebSocket connection closed");
-    //     };
-
-    //     return () => socket.close();
-    // }, [entryLevel]);
 
     useEffect(() => {
-        if(isTradePlaced){
+        if (isTradePlaced) {
             if (entryLevel === null || btc_mark_price === null) return;
-    
-            if (btc_mark_price > entryLevel) {
-                // Price is above entry price
+
+            if (btc_mark_price > entryLevel + strike_distance) {
+                setNextLongLevel(entryLevel + strike_distance * positions.filter((p) => p.type === "long").length)
+                console.log(nextLongLevel);                // Price is above entry price
                 closeAllPositionsOfType("short"); // Close all short positions
                 handleLongStrategy();
-            } else if (btc_mark_price < entryLevel) {
+            } else if (btc_mark_price < entryLevel - strike_distance) {
+                setNextShortLevel(entryLevel + strike_distance * positions.filter((p) => p.type === "short").length)
+                console.log(nextShortLevel);
                 // Price is below entry price
                 closeAllPositionsOfType("long"); // Close all long positions
                 handleShortStrategy();
@@ -65,9 +61,8 @@ function StrategyTwo() {
 
     const handleLongStrategy = () => {
         const lastPosition = positions[positions.length - 1];
-        const nextLongLevel =
-            entryLevel + strike_distance * positions.filter((p) => p.type === "long" && p.price !== entryLevel).length;
-
+        // nextLongLevel =
+        //     entryLevel + strike_distance * positions.filter((p) => p.type === "long").length;
         if (
             btc_mark_price >= nextLongLevel &&
             (!lastPosition || lastPosition.type === "short" || lastPosition.price !== nextLongLevel)
@@ -80,9 +75,9 @@ function StrategyTwo() {
 
     const handleShortStrategy = () => {
         const lastPosition = positions[positions.length - 1];
-        const nextShortLevel =
-            entryLevel - strike_distance * positions.filter((p) => p.type === "short" && p.price !== entryLevel).length;
-
+        // nextShortLevel =
+        //     entryLevel - strike_distance * positions.filter((p) => p.type === "short").length;
+        console.log(nextShortLevel);
         if (
             btc_mark_price <= nextShortLevel &&
             (!lastPosition || lastPosition.type === "long" || lastPosition.price !== nextShortLevel)
@@ -131,27 +126,61 @@ function StrategyTwo() {
     };
 
     return (
-        <div>
-            <h1>Trading Strategy</h1>
-            <p>Entry Price: {entryLevel || "Not set"}</p>
-            <p>Current Price: {btc_mark_price || "Fetching..."}</p>
+        <div className='section2'>
             <div>
-                <button onClick={startTrading}>Place trade</button>
+                <div className="contractDate">
+                    <div>
+                        Contract: {contract}
+                    </div>
+                    <div>
+                        <DatePicker
+                            className="datepicker"
+                            selected={selectedDate}
+                            onChange={handleDateChange}
+                            dateFormat="dd/MM/yyyy" // You can display the date in the format you prefer in the datepicker itself
+                            placeholderText="Select a date"
+                        />
+                    </div>
+                </div>
+                {/* <div>Market Price - {btc_mark_price}</div> */}
+                {/* <div>Current Strike - {props.btcbtc_current_strike}</div>
+            <div>Up Strike - {props.btcStrike.up}</div>
+            <div>Down Strike - {props.btcStrike.down}</div> */}
             </div>
-            <h2>Open Positions</h2>
-            <ul>
-                {positions.map((pos, idx) => (
-                    <li key={idx}>
-                        {pos.type.toUpperCase()} at {pos.price} (Time: {pos.time})
-                    </li>
-                ))}
-            </ul>
-            <h2>Trade Log</h2>
-            <ul>
-                {tradeLog.map((log, idx) => (
-                    <li key={idx}>{log}</li>
-                ))}
-            </ul>
+            <div>
+                <div>Entry Strike - {entryLevel || "Not set"}</div>
+                <div>Current Strike - {btc_mark_price || "Not Fetching..."}</div>
+                {/* <div>Up Strike - {upStrike}</div> */}
+                {/* <div>Down Strike - {downStrike}</div> */}
+            </div>
+            <div>
+                <button onClick={startTrading}>Start Trading</button>
+
+                {/* <button onClick={trade}>Start Trading</button>
+            <button onClick={stopTrading}>Stop Trading</button>
+            <button onClick={closeAllPosition}>Close Positions</button>
+            <button onClick={getDataBack}>Reload</button> */}
+            </div>
+            <div className="section3 entries">
+                <div>
+                    <div><u>Open Entries</u></div>
+                    <div>
+                        {positions.map((pos, idx) => (
+                            <div key={idx}>
+                                {pos.type.toUpperCase()} at {pos.price} (Time: {pos.time})
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <div><u>Trade Log</u></div>
+                    <div>
+                        {tradeLog.map((log, idx) => (
+                            <div key={idx}>{log}</div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

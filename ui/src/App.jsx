@@ -6,6 +6,8 @@ import { api_key, getProductId, generateSignature } from "./Helpers/HelperFuncti
 import axios from './Helpers/Axios';
 import { GlobalProvider } from './Context/GlobalState';
 import StrategyTwo from './Components/StrategyTwo';
+import StrategyThree from './Components/StrategyThree';
+import StrategyFour from './Components/StrategyFour';
 
 function App() {
 
@@ -60,12 +62,18 @@ function App() {
         {/* <div>
           <StrategyOne />
         </div> */}
+        <div>
+          <StrategyFour />
+        </div>
         {/* <div>
           <button onClick={placeOrder}>Place order</button>
         </div> */}
-        <div>
+        {/* <div>
           <StrategyTwo />
-        </div>
+        </div> */}
+        {/* <div>
+          <StrategyThree />
+        </div> */}
       </div>
     </GlobalProvider>
   )
