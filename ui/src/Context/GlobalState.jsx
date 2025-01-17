@@ -17,13 +17,17 @@ const initialState = {
 export const GlobalContext = createContext(initialState);
 
 // Api info
-export const PROD_API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
-export const PROD_API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
-export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
-export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
-export const BTC_STRIKE_DISTANCE = 200;
-const produrl = "wss://socket.india.delta.exchange";
-const testurl = "wss://socket-ind.testnet.deltaex.org";
+//prod Api's
+export const API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
+export const API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
+const testurl = "wss://socket.india.delta.exchange";
+
+//test api's
+// export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
+// export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
+// const testurl = "wss://socket-ind.testnet.deltaex.org";
+
+export const BTC_STRIKE_DISTANCE = 100;
 // -----
 
 // Provider component
@@ -267,7 +271,7 @@ export const GlobalProvider = ({ children }) => {
         }
 
         wsRefLive.current.send(JSON.stringify(unSubscribeBtc));
-        wsRefLive.current.close();
+        // wsRefLive.current.close();
     }
 
     function closeAllPosition() {

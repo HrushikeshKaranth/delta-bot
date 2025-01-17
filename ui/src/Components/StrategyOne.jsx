@@ -8,6 +8,11 @@ import axios from "../Helpers/Axios";
 
 function StrategyOne() {
   const { btc_mark_price, btc_current_strike, strike_distance, getProductId, generateSignature, api_key, api_secret, closeAllPosition } = useContext(GlobalContext);
+  const [entryPrice, setEntryPrice] = useState(null);
+    const [currentPrice, setCurrentPrice] = useState(null);
+    const [positions, setPositions] = useState([]); // Array of open trades
+    const [tradeLog, setTradeLog] = useState([]); // To log trades for display
+    
 
   const intervalId = useRef();
 
