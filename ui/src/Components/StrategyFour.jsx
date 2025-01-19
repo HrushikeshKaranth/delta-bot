@@ -49,16 +49,19 @@ function StrategyFour() {
         setContract(localStorage.getItem('contract'));
         setDownStrike(localStorage.getItem('downStrike'));
         setUpStrike(localStorage.getItem('upStrike'));
+        setBtcStrikeDistance(localStorage.getItem('strikeDistance'));
         setIsReloaded(true);
     }
 
     // Function to return contract symbol for calls
     function getCallStrikeSymbol(strike) {
-        return 'C-BTC-' + strike + '-' + contract;
+        // return 'C-BTC-' + strike + '-' + contract;
+        return 'C-ETH-' + strike + '-' + contract;
     }
     // Function to return contract symbol for puts
     function getPutStrikeSymbol(strike) {
-        return 'P-BTC-' + strike + '-' + contract;
+        // return 'P-BTC-' + strike + '-' + contract;
+        return 'P-ETH-' + strike + '-' + contract;
     }
 
     // Function to place orders
@@ -70,7 +73,7 @@ function StrategyFour() {
         const query_string = ''
         let payload = {
             "product_symbol": symbol,
-            "size": 10,
+            "size": 1,
             "side": side,
             "order_type": "market_order",
             "reduce_only": false
@@ -89,10 +92,10 @@ function StrategyFour() {
             method: 'POST',
             url: '/orders',
             headers: reqHeaders,
-            data: payload  // 'data' is used instead of 'body' in axios
+            data: payload  
         })
             .then((res) => { console.log(res); return true })
-            .catch((err) => { console.log(err); return false })
+            .catch((err) => { console.log(err.response.data.error.code); return false })
     }
 
     // Function to start trading
@@ -263,12 +266,15 @@ function StrategyFour() {
                             className="datepicker"
                             selected={selectedDate}
                             onChange={handleDateChange}
-                            dateFormat="dd/MM/yyyy" // You can display the date in the format you prefer in the datepicker itself
+                            dateFormat="dd/MM/yyyy" 
                             placeholderText="Select a date"
                         />
                     </div>
                     <div><div>Set Strike Distance:</div>
-                        <input type="text" defaultValue={btcStrikeDistance} onChange={(e)=>{ setBtcStrikeDistance(parseInt(e.target.value))}} /></div>
+                        <input type="text" defaultValue={btcStrikeDistance} onChange={(e)=>{ 
+                            setBtcStrikeDistance(parseInt(e.target.value));
+                            localStorage.setItem("strikeDistance",e.target.value);
+                            }} /></div>
                 </div>
             </div>
             <div>

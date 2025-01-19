@@ -18,16 +18,16 @@ export const GlobalContext = createContext(initialState);
 
 // Api info
 // *** Prod API details ***
-// export const API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
-// export const API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
-// const testurl = "wss://socket.india.delta.exchange";
-// const userId = 35296206;
+export const API_KEY = '2MeKJycZ6M3Dz0eU2qECNSD9UZWF9g';
+export const API_SECRET = 'nJx90OdRW6n2Fw31kRuSsz2LrWIzvfgqiryCYS9bILvQWvCU9Q9hnDoVoo3L'
+const testurl = "wss://socket.india.delta.exchange";
+const userId = 35296206;
 
 // *** Test API details ***
-export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
-export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY';
-const testurl = "wss://socket-ind.testnet.deltaex.org";
-const userId = 98816916;
+// export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
+// export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY';
+// const testurl = "wss://socket-ind.testnet.deltaex.org";
+// const userId = 98816916;
 // -----
 
 export let BTC_STRIKE_DISTANCE = 0;
@@ -37,7 +37,7 @@ export let BTC_STRIKE_DISTANCE = 0;
 export const GlobalProvider = ({ children }) => {
     // Reference variable for web socket
     const wsRefLive = useRef(null);
-    
+
     const [btcStrikeDistance, setBtcStrikeDistance] = useState(1500);
     BTC_STRIKE_DISTANCE = btcStrikeDistance;
     // console.log(BTC_STRIKE_DISTANCE);
@@ -186,7 +186,7 @@ export const GlobalProvider = ({ children }) => {
             wsRefLive.current = null;
             startWs();
         }
-        else{
+        else {
             console.log('Force closing Web socket and Resetting connection');
             wsRefLive.current = null;
             startWs();
@@ -201,7 +201,7 @@ export const GlobalProvider = ({ children }) => {
     // Function to generate Signature for Api Authentication
     function generateSignature(secret, message) {
         // Convert secret and message to bytes-utf8
-        const secretBytes = CryptoJS.enc.Utf8.parse(secret); 
+        const secretBytes = CryptoJS.enc.Utf8.parse(secret);
         const messageBytes = CryptoJS.enc.Utf8.parse(message);
 
         // HMAC-SHA256 calculation
@@ -233,6 +233,7 @@ export const GlobalProvider = ({ children }) => {
         await axios.get('/profile', { headers: req_headers })
             .then((res) => {
                 if (res) {
+                    console.log(res);
                     setUsername(res.data.result.nick_name);
                     setEmail(res.data.result.email);
                     return true;
@@ -244,6 +245,8 @@ export const GlobalProvider = ({ children }) => {
     // Function to subscribe to the bitcoin realtime data
     function getQuotesLive() {
         // Subscribe body for Bitcoin
+        // BTC = .DEXBTUSD
+        // ETH = .DEETHUSD
         const subscribeBtc = {
             "type": "subscribe",
             "payload": {
@@ -251,7 +254,7 @@ export const GlobalProvider = ({ children }) => {
                     {
                         "name": "spot_price",
                         "symbols": [
-                            ".DEXBTUSD"
+                            ".DEETHUSD"
                         ]
                     }
                 ]
@@ -288,9 +291,16 @@ export const GlobalProvider = ({ children }) => {
         const method = 'POST'
         const path = '/v2/positions/close_all'
         // const query_string = ''
+        let payload =
+        {
+            "close_all_portfolio": true,
+            "close_all_isolated": true,
+            "user_id": userId
+        }
+        payload = JSON.stringify(payload);
         // timestamp in epoch unix format
         const timestamp = Date.now() / 1000 | 0
-        const signature_data = method + timestamp + path;
+        const signature_data = method + timestamp + path + payload;
         const signature = generateSignature(API_SECRET, signature_data)
         let reqHeaders = {
             'Content-Type': 'application/json',
@@ -298,12 +308,6 @@ export const GlobalProvider = ({ children }) => {
             'signature': signature,
             'timestamp': timestamp
         }
-        let payload = 
-            {
-                "close_all_portfolio": true,
-                "close_all_isolated": true,
-                "user_id": userId
-              }
 
         axios({
             method: 'POST',
@@ -316,7 +320,7 @@ export const GlobalProvider = ({ children }) => {
     }
 
     // Function to change default Leverage
-    async function changeLeverage(symbol){
+    async function changeLeverage(symbol) {
 
         async function getSymboId(symbol) {
             await axios.get(`/products/${symbol}`)
@@ -326,7 +330,7 @@ export const GlobalProvider = ({ children }) => {
 
         let product_id = await getSymboId(symbol);
         path = `v2/products/${product_id}/orders/leverage`
-        RequestUrl = `/products/${product_id}/orders/leverage`
+        let requestUrl = `/products/${product_id}/orders/leverage`
 
         const method = 'POST'
         // const query_string = ''
@@ -340,14 +344,14 @@ export const GlobalProvider = ({ children }) => {
             'signature': signature,
             'timestamp': timestamp
         }
-        let payload = 
-            {
-                "leverage": 10
-              }
+        let payload =
+        {
+            "leverage": 10
+        }
 
         axios({
             method: 'POST',
-            url: RequestUrl,
+            url: requestUrl,
             headers: reqHeaders,
             data: payload
         })
