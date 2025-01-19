@@ -1,14 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import React, { useContext } from 'react'
-import { GlobalContext } from '../Context/GlobalState';
+import { BTC_STRIKE_DISTANCE, GlobalContext } from '../Context/GlobalState';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";  // Styles for the datepicker
 import { format } from 'date-fns';
 import axios from "../Helpers/Axios";
 
 function StrategyFour() {
-    const { btc_mark_price, btc_current_strike, strike_distance, generateSignature, api_key, api_secret, closeAllPosition } = useContext(GlobalContext);
-
+    // Context 
+    const { btc_mark_price, btc_current_strike,btcStrikeDistance,setBtcStrikeDistance, strike_distance, generateSignature, api_key, api_secret, closeAllPosition } = useContext(GlobalContext);
+    // console.log(btcStrikeDistance);
+    // console.log(strike_distance);
+    // console.log(BTC_STRIKE_DISTANCE);
+    // States
     const [entryStrike, setEntryStrike] = useState(0);
     let [upStrike, setUpStrike] = useState(0);
     let [downStrike, setDownStrike] = useState(0);
@@ -18,6 +22,7 @@ function StrategyFour() {
     const [contract, setContract] = useState('')
 
     const [selectedDate, setSelectedDate] = useState(null);
+    // Function to handle date format for the contract
     const handleDateChange = (date) => {
         setSelectedDate(date);
         setContract(date ? format(date, 'ddMMyy') : '');
@@ -99,16 +104,16 @@ function StrategyFour() {
             setUpStrike(btc_current_strike + strike_distance);
             let callSymbol = getCallStrikeSymbol(btc_current_strike);
             let putSymbol = getPutStrikeSymbol(btc_current_strike);
-            // placeOrder(getCallStrikeSymbol(btc_current_strike), 'sell')
-            // placeOrder(getPutStrikeSymbol(btc_current_strike), 'sell')
+            placeOrder(getCallStrikeSymbol(btc_current_strike), 'sell')
+            placeOrder(getPutStrikeSymbol(btc_current_strike), 'sell')
             console.log("Trading started 🟢");
             console.log("Sold - " + btc_current_strike + " CE and PE");
 
             all.push(btc_current_strike + ' Short Straddle at - ' + btc_mark_price);
             localStorage.setItem("TimeStamp", new Date());
             localStorage.setItem("allStrikes", all);
-            localStorage.setItem('upStrike', upStrike)
-            localStorage.setItem('downStrike', downStrike)
+            localStorage.setItem('upStrike', btc_current_strike + strike_distance)
+            localStorage.setItem('downStrike', btc_current_strike - strike_distance)
             localStorage.setItem("entryStrike", btc_current_strike);
             setIsTradePlaced(true);
         }
@@ -129,15 +134,14 @@ function StrategyFour() {
             if (isUpStrikePlaced && btc_mark_price < entryStrike) {
                 let exit = open.pop();
                 all.push('Exited ' + exit + ' PE at - ' + btc_mark_price);
-                // placeOrder(getPutStrikeSymbol(exit),'buy')
+                placeOrder(getPutStrikeSymbol(exit),'buy')
                 closed.push(exit);
                 setUpStrike(entryStrike + strike_distance);
                 setDownStrike(entryStrike - strike_distance);
+
+                setLocalStorageData();
                 localStorage.setItem('upStrike', entryStrike + strike_distance)
                 localStorage.setItem('downStrike', entryStrike - strike_distance)
-                localStorage.setItem("openStrikes", open);
-                localStorage.setItem("allStrikes", all);
-                localStorage.setItem("closedStrikes", closed);
                 console.log("Exited - " + exit + " PE");
                 setIsUpStrikePlaced(false);
                 console.log('No Open Positions');
@@ -145,15 +149,15 @@ function StrategyFour() {
             else if (isDownStrikePlaced && btc_mark_price > entryStrike) {
                 let exit = open.pop();
                 all.push('Exited ' + exit + ' CE at - ' + btc_mark_price);
-                // placeOrder(getCallStrikeSymbol(exit),'buy')
+                placeOrder(getCallStrikeSymbol(exit),'buy')
                 closed.push(exit);
                 setUpStrike(entryStrike + strike_distance);
                 setDownStrike(entryStrike - strike_distance);
+
+                setLocalStorageData();
                 localStorage.setItem('upStrike', entryStrike + strike_distance)
                 localStorage.setItem('downStrike', entryStrike - strike_distance)
-                localStorage.setItem("openStrikes", open);
-                localStorage.setItem("allStrikes", all);
-                localStorage.setItem("closedStrikes", closed);
+
                 console.log("Exited - " + exit + " CE");
                 setIsDownStrikePlaced(false);
                 console.log('No Open Positions');
@@ -165,15 +169,14 @@ function StrategyFour() {
                     console.log("Sold - " + upStrike + " PE");
                     all.push('Sold ' + upStrike + ' PE at - ' + btc_mark_price);
 
-                    // placeOrder(getPutStrikeSymbol(upStrike),'sell')
+                    placeOrder(getPutStrikeSymbol(upStrike),'sell')
                     open.push(upStrike);
 
                     setIsUpStrikePlaced(true);
                     setIsDownStrikePlaced(false);
                     setUpStrike(upStrike + strike_distance);
 
-                    localStorage.setItem("allStrikes", all);
-                    localStorage.setItem("openStrikes", open);
+                    setLocalStorageData();
                     localStorage.setItem('upStrike', upStrike + strike_distance)
                     localStorage.setItem('downStrike', downStrike)
                 }
@@ -182,15 +185,13 @@ function StrategyFour() {
                     let exit = open.pop();
                     console.log("Exited - " + exit + " PE");
 
-                    // placeOrder(getPutStrikeSymbol(exit),'buy')
+                    placeOrder(getPutStrikeSymbol(exit),'buy')
                     closed.push(exit);
                     all.push('Exited ' + exit + ' PE at - ' + btc_mark_price);
                     
                     setUpStrike(upStrike - strike_distance);
                     
-                    localStorage.setItem("allStrikes", all);
-                    localStorage.setItem("openStrikes", open);
-                    localStorage.setItem("closedStrikes", closed);
+                    setLocalStorageData();
                     localStorage.setItem('upStrike', upStrike - strike_distance)
                     localStorage.setItem('downStrike', downStrike)
                 }
@@ -200,7 +201,7 @@ function StrategyFour() {
             else if (btc_mark_price < entryStrike) {
                 if (btc_mark_price <= downStrike) {
                     console.log("Sold - " + downStrike + " CE");
-                    // placeOrder(getCallStrikeSymbol(downStrike),'sell')
+                    placeOrder(getCallStrikeSymbol(downStrike),'sell')
 
                     all.push('Sold ' + downStrike + ' CE at - ' + btc_mark_price);
                     open.push(downStrike);
@@ -209,8 +210,7 @@ function StrategyFour() {
                     setIsDownStrikePlaced(true);
                     setDownStrike(downStrike - strike_distance);
 
-                    localStorage.setItem("allStrikes", all);
-                    localStorage.setItem("openStrikes", open);
+                    setLocalStorageData();
                     localStorage.setItem('downStrike', downStrike - strike_distance);
                     localStorage.setItem('upStrike', upStrike)
                 }
@@ -220,13 +220,11 @@ function StrategyFour() {
                     all.push('Exited ' + exit + ' CE at - ' + btc_mark_price);
                     console.log("Exited - " + exit + " CE");
                     
-                    // placeOrder(getCallStrikeSymbol(exit),'buy')
+                    placeOrder(getCallStrikeSymbol(exit),'buy')
                     closed.push(exit);
                     setDownStrike(downStrike + strike_distance);
 
-                    localStorage.setItem("allStrikes", all);
-                    localStorage.setItem("openStrikes", open);
-                    localStorage.setItem("closedStrikes", closed);
+                    setLocalStorageData();
                     localStorage.setItem('downStrike', downStrike + strike_distance);
                     localStorage.setItem('upStrike', upStrike);
                 }
@@ -269,6 +267,8 @@ function StrategyFour() {
                             placeholderText="Select a date"
                         />
                     </div>
+                    <div><div>Set Strike Distance:</div>
+                        <input type="text" defaultValue={btcStrikeDistance} onChange={(e)=>{ setBtcStrikeDistance(parseInt(e.target.value))}} /></div>
                 </div>
             </div>
             <div>

@@ -90,6 +90,9 @@ Button:active{
     color: black;
     /* border: 1px solid blue; */
 }
+input{
+    color: black;
+}
 .datepicker{
     color: black;
     /* border: 1px solid red; */

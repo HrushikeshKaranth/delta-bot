@@ -1,6 +1,5 @@
 import { BTC_STRIKE_DISTANCE } from "./GlobalState";
 export default (state, action ) => {
-    // let strikeDistance = 500;
     switch(action.type){
         case 'GET_TRANSACTIONS':
             return{
@@ -18,10 +17,10 @@ export default (state, action ) => {
                 ...state,
                 transactions: [...state.transactions, action.payload]
             }
-        case 'TRANSACTION_ERROR':
+        case 'SET_BTC_STRIKE_DISTANCE':
             return{
                 ...state,
-                error: action.payload
+                strike_distance: action.payload
             }
         case 'SET_BTC_PRICE':
             return{

@@ -17,24 +17,30 @@ const initialState = {
 export const GlobalContext = createContext(initialState);
 
 // Api info
-//Prod API details
-export const API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
-export const API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
-const testurl = "wss://socket.india.delta.exchange";
+// *** Prod API details ***
+// export const API_KEY = 'HeCTgCW9ROo2YHAnHooZiLj1FWOQrq';
+// export const API_SECRET = 'ueNyuEg3iGqsKzD6ZZBESCzxQF8HcTdRnzQzuTx7SuS8LQT0Amly54oQaFEp'
+// const testurl = "wss://socket.india.delta.exchange";
+// const userId = 35296206;
 
-//Test API details
-// export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
-// export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY'
-// const testurl = "wss://socket-ind.testnet.deltaex.org";
+// *** Test API details ***
+export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
+export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY';
+const testurl = "wss://socket-ind.testnet.deltaex.org";
+const userId = 98816916;
 // -----
 
-export const BTC_STRIKE_DISTANCE = 100;
+export let BTC_STRIKE_DISTANCE = 0;
+// console.log(BTC_STRIKE_DISTANCE);
 
 // Provider component
 export const GlobalProvider = ({ children }) => {
     // Reference variable for web socket
     const wsRefLive = useRef(null);
-
+    
+    const [btcStrikeDistance, setBtcStrikeDistance] = useState(1500);
+    BTC_STRIKE_DISTANCE = btcStrikeDistance;
+    // console.log(BTC_STRIKE_DISTANCE);
     // Reducer function
     const [state, dispatch] = useReducer(AppReducer, initialState);
 
@@ -277,6 +283,7 @@ export const GlobalProvider = ({ children }) => {
         // wsRefLive.current.close();
     }
 
+    // Function to close all open positions
     function closeAllPosition() {
         const method = 'POST'
         const path = '/v2/positions/close_all'
@@ -291,28 +298,62 @@ export const GlobalProvider = ({ children }) => {
             'signature': signature,
             'timestamp': timestamp
         }
+        let payload = 
+            {
+                "close_all_portfolio": true,
+                "close_all_isolated": true,
+                "user_id": userId
+              }
 
         axios({
             method: 'POST',
             url: '/positions/close_all',
             headers: reqHeaders,
+            data: payload
         })
             .then((res) => { console.log(res); })
             .catch((err) => { console.log(err); })
     }
 
-    // // Function to generate Signature for Api Authentication
-    // function generateSignature(secret, message) {
-    //     const secretBytes = CryptoJS.enc.Utf8.parse(secret); // Convert secret to bytes
-    //     const messageBytes = CryptoJS.enc.Utf8.parse(message); // Convert message to bytes
+    // Function to change default Leverage
+    async function changeLeverage(symbol){
 
-    //     // HMAC-SHA256 calculation
-    //     const hash = CryptoJS.HmacSHA256(messageBytes, secretBytes);
+        async function getSymboId(symbol) {
+            await axios.get(`/products/${symbol}`)
+                .then((res) => { return res.data.result.id; })
+                .catch((err) => { console.log(err); return false })
+        }
 
-    //     // Convert to hexadecimal string
-    //     const signature = hash.toString(CryptoJS.enc.Hex);
-    //     return signature;
-    // }
+        let product_id = await getSymboId(symbol);
+        path = `v2/products/${product_id}/orders/leverage`
+        RequestUrl = `/products/${product_id}/orders/leverage`
+
+        const method = 'POST'
+        // const query_string = ''
+        // timestamp in epoch unix format
+        const timestamp = Date.now() / 1000 | 0
+        const signature_data = method + timestamp + path;
+        const signature = generateSignature(API_SECRET, signature_data)
+        let reqHeaders = {
+            'Content-Type': 'application/json',
+            'api-key': API_KEY,
+            'signature': signature,
+            'timestamp': timestamp
+        }
+        let payload = 
+            {
+                "leverage": 10
+              }
+
+        axios({
+            method: 'POST',
+            url: RequestUrl,
+            headers: reqHeaders,
+            data: payload
+        })
+            .then((res) => { console.log(res); })
+            .catch((err) => { console.log(err); })
+    }
 
     function getProductId(symbol) {
         // let id = ''
@@ -344,6 +385,7 @@ export const GlobalProvider = ({ children }) => {
             auth,
             setIsConnected,
             setConnectionLight,
+            setBtcStrikeDistance,
             getProfileInfo,
             startWs,
             restartWs,
