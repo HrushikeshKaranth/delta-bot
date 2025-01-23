@@ -30,7 +30,7 @@ const userId = 35296206;
 // const userId = 98816916;
 // -----
 
-export let BTC_STRIKE_DISTANCE = 0;
+export let BTC_STRIKE_DISTANCE = 200;
 // console.log(BTC_STRIKE_DISTANCE);
 
 // Provider component
@@ -38,7 +38,7 @@ export const GlobalProvider = ({ children }) => {
     // Reference variable for web socket
     const wsRefLive = useRef(null);
 
-    const [btcStrikeDistance, setBtcStrikeDistance] = useState(1500);
+    const [btcStrikeDistance, setBtcStrikeDistance] = useState(200);
     BTC_STRIKE_DISTANCE = btcStrikeDistance;
     // console.log(BTC_STRIKE_DISTANCE);
     // Reducer function
@@ -254,13 +254,13 @@ export const GlobalProvider = ({ children }) => {
                     {
                         "name": "spot_price",
                         "symbols": [
-                            ".DEETHUSD"
+                            ".DEXBTUSD"
                         ]
                     }
                 ]
             }
         }
-
+       
         wsRefLive.current.send(JSON.stringify(subscribeBtc));
         console.log('Price stream started 🟢');
     }
@@ -370,6 +370,52 @@ export const GlobalProvider = ({ children }) => {
         // return id;
     }
 
+    // Function to get option products
+    function getProducts(){
+        // https://api.india.delta.exchange/v2/products
+        const method = 'GET'
+        const path = '/v2/products'
+        const timestamp = Date.now() / 1000 | 0
+        let params = 'contract_types=call_options,put_options&states=live'
+        let d ='/v2/positions/margined?contract_types=call_options'
+        // params = JSON.stringify(params)
+        const payload = ''
+        const signature_data = method + timestamp + path +'?'+params
+        const signature = generateSignature(API_SECRET, signature_data)
+        let reqHeaders = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'api-key': API_KEY,
+            'signature': signature,
+            'timestamp': timestamp
+        }
+
+        axios({
+            method: 'GET',
+            url: '/products',
+            headers: reqHeaders,
+            params:{
+                contract_types:'call_options,put_options',
+                states:'live'
+            }
+        })
+            .then((res) => { console.log(res); 
+                const availablePutStrikes = res.data.result
+                .filter((category)=> category.symbol.split('-')[3] == '230125')
+                .filter((category)=> category.contract_unit_currency == 'BTC')
+                .filter((category)=> category.contract_type == 'put_options')
+                .sort((a, b) => a.strike_price - b.strike_price)
+                console.log(availablePutStrikes);
+                const availableCallStrikes = res.data.result
+                .filter((category)=> category.symbol.split('-')[3] == '230125')
+                .filter((category)=> category.contract_unit_currency == 'BTC')
+                .filter((category)=> category.contract_type == 'call_options')
+                .sort((a, b) => a.strike_price - b.strike_price)
+                console.log(availableCallStrikes);
+            })
+            .catch((err) => { console.log(err); })
+    }
+
     return (
         <GlobalContext.Provider value={{
             api_key: API_KEY,
@@ -386,6 +432,7 @@ export const GlobalProvider = ({ children }) => {
             username,
             email,
             check,
+            isAuth,
             auth,
             setIsConnected,
             setConnectionLight,

@@ -9,7 +9,7 @@ function BtcPrice() {
 
         <>
             {/* <div><span>{connectionLight}</span><u>Bitcoin</u> - {btc_mark_price}</div> */}
-            <div><span>{connectionLight}</span><u>Etherium</u> - {btc_mark_price}</div>
+            <div><span>{connectionLight}</span><u>Price</u> - {btc_mark_price}</div>
             {/* <div>
                 <button onClick={getQuotesLive}>Start Price Stream</button>
                 <button onClick={closeQuotesLive}>Stop Price Stream</button>
