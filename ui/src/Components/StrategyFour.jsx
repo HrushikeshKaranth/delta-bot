@@ -20,11 +20,13 @@ function StrategyFour() {
     const [closedStrikes, setClosedStrikes] = useState({ 'data': [] }); let closed = closedStrikes.data;
     const [allStrikes, setAllStrikes] = useState({ 'data': [] }); let all = allStrikes.data;
     const [contract, setContract] = useState('')
-    let [putStrikes, setPutStrikes] = useState([]);
-    let [putStrikesSorted, setPutStrikesSorted] = useState(null);
+    // let [putStrikes, setPutStrikes] = useState([]);
+    let [putStrikesSorted, setPutStrikesSorted] = useState({ 'data': [] }); let putStrikesData = putStrikesSorted.data
+    let putStrikesSortedArr = [];
     let [putStrikesIndex, setPutStrikesIndex] = useState([]);
-    let [callStrikes, setCallStrikes] = useState([]);
-    let [callStrikesSorted, setCallStrikesSorted] = useState(null);
+    // let [callStrikes, setCallStrikes] = useState([]);
+    let [callStrikesSorted, setCallStrikesSorted] = useState({ 'data': [] }); let callStrikesData = callStrikesSorted.data
+    let callStrikesSortedArr = [];
     let [callStrikesIndex, setCallStrikesIndex] = useState([]);
 
     const [selectedDate, setSelectedDate] = useState(null);
@@ -39,7 +41,8 @@ function StrategyFour() {
     const [isUpStrikePlaced, setIsUpStrikePlaced] = useState(false);
     const [isDownStrikePlaced, setIsDownStrikePlaced] = useState(false);
     const [isTradePlaced, setIsTradePlaced] = useState(false);
-    const [isDataLoded, setIsDataLoaded] = useState(false)
+    const [isDataLoaded, setIsDataLoaded] = useState(false)
+    const [isStrikesLoaded, setIsStrikesLoaded] = useState(false)
 
     // Function to reload all the date from localstorage
     function getDataBack() {
@@ -78,7 +81,10 @@ function StrategyFour() {
         axios.get(`/l2orderbook/${symbol}`)
             .then((res) => {
                 console.log(res);
-                bestBid = res.data.result.sell[0].price;
+                if (side == 'sell')
+                    bestBid = res.data.result.buy[0].price;
+                if (side == 'buy')
+                    bestBid = res.data.result.sell[0].price;
                 console.log(bestBid);
             })
             .catch((err) => {
@@ -89,7 +95,7 @@ function StrategyFour() {
         const query_string = ''
         let payload = {
             "product_symbol": symbol,
-            "size": 10,
+            "size": 100,
             "side": side,
             "order_type": "limit_order",
             "limit_price": bestBid,
@@ -125,6 +131,7 @@ function StrategyFour() {
 
     // Function to get option products
     function getProducts() {
+        setIsDataLoaded(false);
         // https://api.india.delta.exchange/v2/products
         const method = 'GET'
         const path = '/v2/products'
@@ -153,49 +160,47 @@ function StrategyFour() {
             }
         })
             .then((res) => {
-                // console.log(res);
-                setPutStrikes(res.data.result
-                    .filter((category) => category.symbol.split('-')[3] == '230125')
+
+                let putStrikes = res.data.result
+                    .filter((category) => category.symbol.split('-')[3] == contract)
                     .filter((category) => category.contract_unit_currency == 'BTC')
                     .filter((category) => category.contract_type == 'put_options')
-                    .sort((a, b) => a.strike_price - b.strike_price))
-                // setPutStrikesIndex(putStrikes.findIndex((data)=> data.strike_price == btc_current_strike))
-                setCallStrikes(res.data.result
-                    .filter((category) => category.symbol.split('-')[3] == '230125')
+                    .sort((a, b) => a.strike_price - b.strike_price)
+
+                let callStrikes = res.data.result
+                    .filter((category) => category.symbol.split('-')[3] == contract)
                     .filter((category) => category.contract_unit_currency == 'BTC')
                     .filter((category) => category.contract_type == 'call_options')
-                    .sort((a, b) => a.strike_price - b.strike_price))
+                    .sort((a, b) => a.strike_price - b.strike_price)
 
+                let indexc = callStrikes.findIndex((data) => data.strike_price == btc_current_strike);
+                let indexp = putStrikes.findIndex((data) => data.strike_price == btc_current_strike);
+
+                let till = indexp + 10;
+                let arr = [];
+                for (let j = indexp > 10 ? indexp - 10 : 0; j <= till; j++) {
+                    putStrikesData.push(putStrikes[j])
+                    // putStrikesSortedArr.push(putStrikes[j])
+                }
+                // setPutStrikesSorted(arr);
+                // console.log(putStrikesSortedArr);
+
+                till = indexc + 10;
+                arr = [];
+                for (let j = indexc > 10 ? indexc - 10 : 0; j <= till; j++) {
+                    callStrikesData.push(callStrikes[j])
+                    // callStrikesSortedArr.push(callStrikes[j])
+                }
+                // setCallStrikesSorted(arr);
+                // console.log(callStrikesSortedArr[0]);
+
+                // setIsStrikesLoaded(true);
                 setIsDataLoaded(true);
             })
-            // setCallStrikesIndex(callStrikes.findIndex((data)=> data.strike_price == btc_current_strike))
             .catch((err) => { console.log(err); })
     }
 
-    useEffect(()=>{getProducts()},[])
-    useEffect(() => {
-        if (isConnected && isAuth && isDataLoded) {
-            let indexc = callStrikes.findIndex((data) => data.strike_price == btc_current_strike);
-            let index = putStrikes.findIndex((data) => data.strike_price == btc_current_strike);
-
-            let till = index + 10;
-            let arr = [];
-            for (let j = index > 10 ? index - 10 : 0; j <= till; j++) {
-                arr.push(putStrikes[j])
-            }
-            setPutStrikesSorted(arr);
-            // console.log(putStrikesSorted);
-
-            till = indexc + 10;
-            arr = [];
-            for (let j = indexc > 10 ? indexc - 10 : 0; j <= till; j++) {
-                arr.push(callStrikes[j])
-            }
-            setCallStrikesSorted(arr);
-            // console.log(callStrikesSorted);
-        }
-
-    }, [btc_current_strike])
+    // useEffect(() => { getProducts() }, [btc_current_strike])
 
     // Function to recheck if the trade has executed
     function reCheckExecutedOrder() {
@@ -385,15 +390,15 @@ function StrategyFour() {
     return (
         <div className="section3">
 
-            <div className="optionStrikes">
+            {/* <div className="optionStrikes">
                 <div><u>Calls</u></div>
                 {
-                    callStrikesSorted ? callStrikesSorted.map((data) => {
-                        return <div className={data.strike_price == btc_current_strike?"currentStrike":''} 
-                        key={data.id}>{data.strike_price}</div>
-                    }) : <></>
+                    isDataLoaded && callStrikesSorted.data.map((data) => {
+                        return <div className={data.strike_price == btc_current_strike ? "currentStrike" : ''}
+                            key={data.id}>{data.strike_price}</div>
+                    })
                 }
-            </div>
+            </div> */}
             <div className='section2'>
                 <div>
                     <div className="contractDate">
@@ -455,13 +460,14 @@ function StrategyFour() {
                     </div>
                 </div>
             </div>
-            <div className="optionStrikes"> 
-                <div><u>Puts</u></div>{
-                putStrikesSorted ? putStrikesSorted.map((data) => {
-                    return <div className={data.strike_price == btc_current_strike?"currentStrike":''} 
-                    key={data.id}>{data.strike_price}</div>
-                }) : <></>
-            }</div>
+            {/* <div className="optionStrikes">
+                <div><u>Puts</u>
+                </div>{
+                    isDataLoaded && putStrikesSorted.data.map((data) => {
+                        return <div className={data.strike_price == btc_current_strike ? "currentStrike" : ''}
+                            key={data.id}>{data.strike_price}</div>
+                    })
+                }</div> */}
         </div>
     )
 }

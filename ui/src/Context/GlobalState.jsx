@@ -18,16 +18,16 @@ export const GlobalContext = createContext(initialState);
 
 // Api info
 // *** Prod API details ***
-export const API_KEY = '2MeKJycZ6M3Dz0eU2qECNSD9UZWF9g';
-export const API_SECRET = 'nJx90OdRW6n2Fw31kRuSsz2LrWIzvfgqiryCYS9bILvQWvCU9Q9hnDoVoo3L'
-const testurl = "wss://socket.india.delta.exchange";
-const userId = 35296206;
+// export const API_KEY = '2MeKJycZ6M3Dz0eU2qECNSD9UZWF9g';
+// export const API_SECRET = 'nJx90OdRW6n2Fw31kRuSsz2LrWIzvfgqiryCYS9bILvQWvCU9Q9hnDoVoo3L'
+// const testurl = "wss://socket.india.delta.exchange";
+// const userId = 35296206;
 
 // *** Test API details ***
-// export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
-// export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY';
-// const testurl = "wss://socket-ind.testnet.deltaex.org";
-// const userId = 98816916;
+export const API_KEY = 'MbcOp0ClHgZSjo7J1PvUHLrnlPPjQA';
+export const API_SECRET = 'QIC5oezWU0MGXEb1vIqSNPe6UdYbIsCDT7nVs4hXacVPUvKWQlaXwqULA3DY';
+const testurl = "wss://socket-ind.testnet.deltaex.org";
+const userId = 98816916;
 // -----
 
 export let BTC_STRIKE_DISTANCE = 200;
