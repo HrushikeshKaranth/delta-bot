@@ -101,6 +101,13 @@ function StrategyFour() {
             "limit_price": bestBid,
             "reduce_only": false
         }
+        // let payload = {
+        //     "product_symbol": symbol,
+        //     "size": 100,
+        //     "side": side,
+        //     "order_type": "market_order",
+        //     "reduce_only": false
+        // }
         payload = JSON.stringify(payload);
         const timestamp = Date.now() / 1000 | 0; // timestamp in epoch unix format
         const signature_data = method + timestamp + path + query_string + payload;
